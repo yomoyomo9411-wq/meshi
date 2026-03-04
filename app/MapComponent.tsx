@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 
-// 標準のピンがNext.js環境で壊れやすいので、CDNの画像で固定
+// Next.js環境で標準ピンが壊れやすいのでCDN固定
 const customIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl:
@@ -18,11 +19,9 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-// ▼ ここは必要なら調整してください（富山県立大学の緯度経度）
-// ※ざっくり値です。正確な座標が分かれば差し替えるのがベスト。
+// 富山県立大学（ざっくり）
+// 正確な緯度経度が分かれば差し替えてOK
 const TOYAMA_PREF_UNIV: LatLngExpression = [36.706, 137.213];
-
-// 東京駅（万一のフォールバック用）
 const TOKYO_STATION: LatLngExpression = [35.681236, 139.767125];
 
 function Recenter({ center, zoom }: { center: LatLngExpression; zoom: number }) {
@@ -36,16 +35,16 @@ function Recenter({ center, zoom }: { center: LatLngExpression; zoom: number }) 
 }
 
 export default function MapComponent() {
+  const router = useRouter();
+
   const [center, setCenter] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
   const [markerPos, setMarkerPos] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
   const [status, setStatus] = useState<string>("現在地を取得中…");
   const zoom = 15;
 
-  // 現在地取得（初回のみ）
   useEffect(() => {
     if (!("geolocation" in navigator)) {
       setStatus("この端末/ブラウザでは位置情報が使えません。");
-      // 位置情報が使えない場合でも、とりあえず富山県立大中心で表示
       setCenter(TOYAMA_PREF_UNIV);
       setMarkerPos(TOYAMA_PREF_UNIV);
       return;
@@ -62,7 +61,6 @@ export default function MapComponent() {
         setStatus("現在地を表示しています。");
       },
       (err) => {
-        // 許可が拒否された/タイムアウト等
         console.warn("Geolocation error:", err);
         setStatus(
           "位置情報を取得できませんでした（許可が必要です）。富山県立大学を中心に表示します。"
@@ -78,7 +76,6 @@ export default function MapComponent() {
     );
   }, []);
 
-  // 右下の「現在地へ」ボタン用（押した時に再取得）
   const refetchLocation = () => {
     if (!("geolocation" in navigator)) return;
 
@@ -100,22 +97,20 @@ export default function MapComponent() {
     );
   };
 
-  // Leafletの中心点が配列かどうかを安定させる（再レンダ時の事故防止）
   const safeCenter = useMemo(() => center, [center]);
 
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
       <MapContainer
-        center={TOKYO_STATION} // 初期値は何でもOK（Recenterで必ず動かす）
+        center={TOKYO_STATION}
         zoom={zoom}
-        style={{ height: "100%", width: "100%" }}
+        style={{ height: "100%", width: "100%" , zIndex: 0}}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* centerが更新されたら地図をそこへ移動 */}
         <Recenter center={safeCenter} zoom={zoom} />
 
         <Marker position={markerPos} icon={customIcon}>
@@ -128,31 +123,33 @@ export default function MapComponent() {
         </Marker>
       </MapContainer>
 
-      {/* ステータス表示（スマホで見やすく） */}
+      {/* ステータスバー */}
       <div
         style={{
-          position: "absolute",
+          position: "fixed",
           top: 10,
           left: 10,
           right: 10,
+          zIndex: 2000,
           padding: "10px 12px",
           background: "rgba(0,0,0,0.6)",
           color: "white",
           borderRadius: 12,
           fontSize: 14,
-          backdropFilter: "blur(6px)",
+          //backdropFilter: "blur(6px)",
         }}
       >
         {status}
       </div>
 
-      {/* 現在地へボタン */}
+      {/* 右下：現在地へ */}
       <button
         onClick={refetchLocation}
         style={{
-          position: "absolute",
-          bottom: 16,
+          position: "fixed",
+          bottom: 72,
           right: 16,
+          zIndex: 2000,
           padding: "12px 14px",
           borderRadius: 999,
           border: "none",
@@ -164,6 +161,37 @@ export default function MapComponent() {
       >
         現在地へ
       </button>
+
+      {/* 下部：マイページボタン（スマホ用） */}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 2000,
+          padding: 12,
+          background: "rgba(0,0,0,0.55)",
+          //backdropFilter: "blur(8px)",
+        }}
+      >
+        <button
+          onClick={() => router.push("/me")}
+          style={{
+            width: "100%",
+            padding: "14px 16px",
+            borderRadius: 14,
+            border: "none",
+            background: "#f59e0b",
+            color: "#111827",
+            fontWeight: 800,
+            fontSize: 16,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+          }}
+        >
+          マイページ
+        </button>
+      </div>
     </div>
   );
 }
