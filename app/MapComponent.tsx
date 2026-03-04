@@ -7,16 +7,18 @@ import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 
 // 標準のピンがNext.js環境で壊れやすいので、CDNの画像で固定
-const customIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+const blueStarIcon = L.divIcon({
+  html: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" width="36px" height="36px" style="filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));">
+      <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.869 1.4-8.168-5.934-5.787 8.2-1.192z"/>
+    </svg>
+  `,
+  className: "custom-star-icon",
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+  popupAnchor: [0, -18],
 });
+// ▲ ここまで追加
 
 // ▼ ここは必要なら調整してください（富山県立大学の緯度経度）
 // ※ざっくり値です。正確な座標が分かれば差し替えるのがベスト。
@@ -118,7 +120,7 @@ export default function MapComponent() {
         {/* centerが更新されたら地図をそこへ移動 */}
         <Recenter center={safeCenter} zoom={zoom} />
 
-        <Marker position={markerPos} icon={customIcon}>
+        <Marker position={markerPos} icon={blueStarIcon as L.DivIcon}>
           <Popup>
             <div style={{ fontSize: 14 }}>
               <div style={{ fontWeight: 700 }}>現在地</div>
