@@ -41,6 +41,7 @@ export default function MapComponent() {
   const [center, setCenter] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
   const [markerPos, setMarkerPos] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
   const [status, setStatus] = useState<string>("現在地を取得中…");
+  const [showProfile, setShowProfile] = useState(false); // 最初はfalse（地図表示）
   const zoom = 15;
 
   // 現在地取得（初回のみ）
@@ -105,6 +106,24 @@ export default function MapComponent() {
   // Leafletの中心点が配列かどうかを安定させる（再レンダ時の事故防止）
   const safeCenter = useMemo(() => center, [center]);
 
+  // 修正場所：return ( のすぐ上
+if (showProfile) {
+  return (
+    <div style={{ 
+      width: "100vw", 
+      height: "100vh", 
+      backgroundColor: "white", 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center" 
+    }}>
+      {/* 閉じられなくなると困るので、戻るボタンだけ置いておきます */}
+      <button onClick={() => setShowProfile(false)}>地図に戻る</button>
+    </div>
+  );
+}
+
+// ここから下は元の return ( ... ) の内容
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
       <MapContainer
@@ -120,14 +139,17 @@ export default function MapComponent() {
         {/* centerが更新されたら地図をそこへ移動 */}
         <Recenter center={safeCenter} zoom={zoom} />
 
-        <Marker position={markerPos} icon={blueStarIcon as L.DivIcon}>
-          <Popup>
-            <div style={{ fontSize: 14 }}>
-              <div style={{ fontWeight: 700 }}>現在地</div>
-              <div>{status}</div>
-            </div>
-          </Popup>
-        </Marker>
+<Marker 
+  position={markerPos} 
+  icon={blueStarIcon as L.DivIcon}
+  eventHandlers={{
+    click: () => {
+      setShowProfile(true); // クリックされたらスイッチをオン（true）にする
+    },
+  }}
+>
+  {/* Popupはあってもなくても大丈夫です */}
+</Marker>
       </MapContainer>
 
       {/* ステータス表示（スマホで見やすく） */}
