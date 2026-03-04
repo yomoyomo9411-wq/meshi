@@ -7,17 +7,20 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 
-// Next.js環境で標準ピンが壊れやすいのでCDN固定
-const customIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+
+// 標準のピンがNext.js環境で壊れやすいので、CDNの画像で固定
+const blueStarIcon = L.divIcon({
+  html: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" width="36px" height="36px" style="filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));">
+      <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.869 1.4-8.168-5.934-5.787 8.2-1.192z"/>
+    </svg>
+  `,
+  className: "custom-star-icon",
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+  popupAnchor: [0, -18],
 });
+// ▲ ここまで追加
 
 // 富山県立大学（ざっくり）
 // 正確な緯度経度が分かれば差し替えてOK
@@ -40,6 +43,7 @@ export default function MapComponent() {
   const [center, setCenter] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
   const [markerPos, setMarkerPos] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
   const [status, setStatus] = useState<string>("現在地を取得中…");
+  const [showProfile, setShowProfile] = useState(false); // 最初はfalse（地図表示）
   const zoom = 15;
 
   useEffect(() => {
@@ -99,6 +103,24 @@ export default function MapComponent() {
 
   const safeCenter = useMemo(() => center, [center]);
 
+  // 修正場所：return ( のすぐ上
+if (showProfile) {
+  return (
+    <div style={{ 
+      width: "100vw", 
+      height: "100vh", 
+      backgroundColor: "white", 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center" 
+    }}>
+      {/* 閉じられなくなると困るので、戻るボタンだけ置いておきます */}
+      <button onClick={() => setShowProfile(false)}>地図に戻る</button>
+    </div>
+  );
+}
+
+// ここから下は元の return ( ... ) の内容
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
       <MapContainer
@@ -113,14 +135,17 @@ export default function MapComponent() {
 
         <Recenter center={safeCenter} zoom={zoom} />
 
-        <Marker position={markerPos} icon={customIcon}>
-          <Popup>
-            <div style={{ fontSize: 14 }}>
-              <div style={{ fontWeight: 700 }}>現在地</div>
-              <div>{status}</div>
-            </div>
-          </Popup>
-        </Marker>
+<Marker 
+  position={markerPos} 
+  icon={blueStarIcon as L.DivIcon}
+  eventHandlers={{
+    click: () => {
+      setShowProfile(true); // クリックされたらスイッチをオン（true）にする
+    },
+  }}
+>
+  {/* Popupはあってもなくても大丈夫です */}
+</Marker>
       </MapContainer>
 
       {/* ステータスバー */}
