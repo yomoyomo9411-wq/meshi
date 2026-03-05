@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 
+
 // 標準のピンがNext.js環境で壊れやすいので、CDNの画像で固定
 const blueStarIcon = L.divIcon({
   html: `
@@ -127,7 +128,7 @@ if (showProfile) {
         zoom={zoom}
         style={{ height: "100%", width: "100%" , zIndex: 0}}
       >
-        <TileLayer
+         <TileLayer
   attribution='&copy; <a href="http://jawg.io" title="Tiles Courtesy of Jawg Maps" target="_blank">&copy; <b>Jawg</b>Maps</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   url="https://{s}.tile.jawg.io/jawg-terrain/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP"
 />
@@ -219,3 +220,5 @@ if (showProfile) {
     </div>
   );
 }
+
+//test
