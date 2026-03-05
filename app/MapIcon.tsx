@@ -1,23 +1,54 @@
 import L from "leaflet";
 
-export const blueShinyStarIcon = L.divIcon({
-  html: `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40px" height="40px">
-      <defs>
-        <filter id="blue-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.869 1.4-8.168-5.934-5.787 8.2-1.192z" fill="#3b82f6" filter="url(#blue-glow)"/>
-      <path d="M12 2.5l2.9 5.9 6.5 0.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5-4.7-4.6 6.5-0.9z" fill="#e0f2fe" fill-opacity="0.95"/>
-    </svg>
-  `,
-  className: "custom-star-icon",
-  iconSize: [40, 40],
-  iconAnchor: [20, 20],
-  popupAnchor: [0, -20],
-});
+export const blueShinyStarIcon = typeof window !== "undefined" 
+  ? L.divIcon({
+      html: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50px" height="50px" style="overflow: visible;">
+          <defs>
+            <!-- 輝きを凝縮し、発光を強めるフィルター -->
+            <filter id="luminous-glow" x="-200%" y="-200%" width="500%" height="500%">
+              <feGaussianBlur stdDeviation="1.5" result="blur1"/> <!-- 芯の光 -->
+              <feGaussianBlur stdDeviation="4" result="blur2"/>   <!-- 広がる光 -->
+              <feMerge>
+                <feMergeNode in="blur2"/>
+                <feMergeNode in="blur2"/> <!-- 青い光を2層重ねて濃くする -->
+                <feMergeNode in="blur1"/>
+                <feMergeNode in="SourceGraphic"/> <!-- 本体の星 -->
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- 1. 最背面：広範囲に広がる鮮やかな青いオーラ -->
+          <path 
+            d="M12 0c0 9 3 12 12 12c-9 0-12 3-12 12c0-9-3-12-12-12c9 0 12-3 12-12z" 
+            fill="#2563eb" 
+            filter="url(#luminous-glow)" 
+            opacity="0.9"
+            transform="scale(1.5) translate(-4, -4)"
+          />
+
+          <!-- 2. 中面：さらに眩しい水色の輝き -->
+          <path 
+            d="M12 0c0 9 3 12 12 12c-9 0-12 3-12 12c0-9-3-12-12-12c9 0 12-3 12-12z" 
+            fill="#60a5fa" 
+            filter="url(#luminous-glow)" 
+            transform="scale(1.1) translate(-1.1, -1.1)"
+          />
+
+          <!-- 3. 前面：最も鋭く光る白い星（本体） -->
+          <path 
+            d="M12 0c0 9 3 12 12 12c-9 0-12 3-12 12c0-9-3-12-12-12c9 0 12-3 12-12z" 
+            fill="white" 
+            filter="url(#luminous-glow)"
+          />
+
+          <!-- 4. 中心：突き抜けるような光のライン（細く、鋭く） -->
+          <rect x="11.8" y="5" width="0.4" height="14" fill="white" filter="url(#luminous-glow)" />
+          <rect x="5" y="11.8" width="14" height="0.4" fill="white" filter="url(#luminous-glow)" />
+        </svg>
+      `,
+      className: "custom-star-icon",
+      iconSize: [50, 50],
+      iconAnchor: [25, 25],
+    })
+  : null;
