@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Profile = {
@@ -26,6 +26,14 @@ export default function MyPage() {
 
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [savedMsg, setSavedMsg] = useState<string>("");
+
+  // ★追加：画像選択inputをクリックさせるためのref
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // ★追加：画像枠タップでファイル選択を開く
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
 
   // 初回：localStorageから読み込み
   useEffect(() => {
@@ -58,6 +66,9 @@ export default function MyPage() {
     reader.onload = () => {
       const result = String(reader.result || "");
       setProfile((p) => ({ ...p, imageDataUrl: result }));
+
+      // ★追加：同じ画像を選び直してもonChangeが発火するようにする
+      e.currentTarget.value = "";
     };
     reader.readAsDataURL(file);
   };
@@ -101,7 +112,10 @@ export default function MyPage() {
       >
         {/* 画像 */}
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          <div
+          {/* ★変更：画像枠をbutton化してタップできるように */}
+          <button
+            type="button"
+            onClick={openFilePicker}
             style={{
               width: 88,
               height: 88,
@@ -111,7 +125,11 @@ export default function MyPage() {
               display: "grid",
               placeItems: "center",
               border: "1px solid rgba(255,255,255,0.12)",
+              cursor: "pointer",
+              padding: 0,
+              flexShrink: 0,
             }}
+            aria-label="プロフィール画像を選択"
           >
             {profile.imageDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -121,23 +139,41 @@ export default function MyPage() {
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
-              <div style={{ fontWeight: 800, opacity: 0.8 }}>No Image</div>
+              <div style={{ fontWeight: 800, opacity: 0.85 }}>Tap</div>
             )}
-          </div>
+          </button>
 
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, opacity: 0.85, marginBottom: 6 }}>
               画像
             </div>
+
+            {/* ★変更：inputは非表示にしてref経由で開く */}
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={onPickImage}
+              style={{ display: "none" }}
+            />
+
+            {/* ★追加：明示的なボタンでも開ける（スマホで分かりやすい） */}
+            <button
+              type="button"
+              onClick={openFilePicker}
               style={{
                 width: "100%",
+                padding: "12px 12px",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: "rgba(255,255,255,0.06)",
                 color: "white",
+                fontWeight: 800,
               }}
-            />
+            >
+              画像を選ぶ
+            </button>
+
             <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
               ※ハッカソン用：いまは端末内に保存（後でFirebase Storageに変更可能）
             </div>
