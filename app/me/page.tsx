@@ -25,7 +25,10 @@ export default function MyPage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState<Profile>(defaultProfile);
+
+  // ★保存通知（中央表示用）
   const [savedMsg, setSavedMsg] = useState<string>("");
+  const hideTimerRef = useRef<number | null>(null);
 
   // 画像選択inputをクリックさせるためのref
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -43,18 +46,34 @@ export default function MyPage() {
     } catch {
       // 破損していても無視
     }
+
+    // アンマウント時にタイマー解除
+    return () => {
+      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    };
   }, []);
 
   const canSave = useMemo(() => profile.name.trim().length > 0, [profile.name]);
 
+  const showToast = (msg: string) => {
+    setSavedMsg(msg);
+
+    // 連打時に前のタイマーを消す
+    if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+
+    hideTimerRef.current = window.setTimeout(() => {
+      setSavedMsg("");
+      hideTimerRef.current = null;
+    }, 2000); // ★2秒で消える
+  };
+
   const save = () => {
     if (!canSave) {
-      setSavedMsg("名前は必須です。");
+      showToast("名前は必須です。");
       return;
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    setSavedMsg("保存しました！");
-    setTimeout(() => setSavedMsg(""), 1500);
+    showToast("保存しました！");
   };
 
   const onPickImage: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
@@ -81,6 +100,40 @@ export default function MyPage() {
         color: "white",
       }}
     >
+      {/* ★中央表示：保存トースト（背景ぼかし） */}
+      {savedMsg && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "grid",
+            placeItems: "center",
+            background: "rgba(0,0,0,0.35)",
+            backdropFilter: "blur(6px)",
+          }}
+          // 押したら消える（任意。邪魔なら消してOK）
+          onClick={() => setSavedMsg("")}
+        >
+          <div
+            style={{
+              minWidth: 220,
+              maxWidth: "80vw",
+              padding: "14px 16px",
+              borderRadius: 16,
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+              textAlign: "center",
+              fontWeight: 900,
+              letterSpacing: 0.2,
+            }}
+          >
+            {savedMsg}
+          </div>
+        </div>
+      )}
+
       {/* ヘッダー */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <button
@@ -109,7 +162,7 @@ export default function MyPage() {
           border: "1px solid rgba(255,255,255,0.10)",
         }}
       >
-        {/* 画像 + 名前（ここに移動） */}
+        {/* 画像 + 名前 */}
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           {/* 画像枠：タップで画像選択 */}
           <button
@@ -143,7 +196,7 @@ export default function MyPage() {
             )}
           </button>
 
-          {/* inputは非表示にしてref経由で開く */}
+          {/* inputは非表示 */}
           <input
             ref={fileInputRef}
             type="file"
@@ -152,7 +205,7 @@ export default function MyPage() {
             style={{ display: "none" }}
           />
 
-          {/* 右側：名前入力（元「画像を選ぶ」ボタンの位置） */}
+          {/* 右側：名前入力 */}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6 }}>
               名前（必須）
@@ -182,7 +235,7 @@ export default function MyPage() {
 
         <div style={{ height: 16 }} />
 
-        {/* 入力フォーム（名前欄は上に移動したので削除） */}
+        {/* 入力フォーム */}
         <Field
           label="所属（自由記入）"
           value={profile.affiliation}
@@ -236,12 +289,6 @@ export default function MyPage() {
             リセット
           </button>
         </div>
-
-        {savedMsg && (
-          <div style={{ marginTop: 10, fontSize: 14, opacity: 0.9 }}>
-            {savedMsg}
-          </div>
-        )}
       </div>
     </div>
   );
