@@ -27,10 +27,10 @@ export default function MyPage() {
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [savedMsg, setSavedMsg] = useState<string>("");
 
-  // ★追加：画像選択inputをクリックさせるためのref
+  // 画像選択inputをクリックさせるためのref
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // ★追加：画像枠タップでファイル選択を開く
+  // 画像枠タップでファイル選択を開く
   const openFilePicker = () => {
     fileInputRef.current?.click();
   };
@@ -61,13 +61,12 @@ export default function MyPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 画像はデモ用にdataURLで保存（Firebase Storageに置き換え可能）
     const reader = new FileReader();
     reader.onload = () => {
       const result = String(reader.result || "");
       setProfile((p) => ({ ...p, imageDataUrl: result }));
 
-      // ★追加：同じ画像を選び直してもonChangeが発火するようにする
+      // 同じ画像を選び直してもonChangeが発火するようにする
       e.currentTarget.value = "";
     };
     reader.readAsDataURL(file);
@@ -110,9 +109,9 @@ export default function MyPage() {
           border: "1px solid rgba(255,255,255,0.10)",
         }}
       >
-        {/* 画像 */}
+        {/* 画像 + 名前（ここに移動） */}
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-          {/* ★変更：画像枠をbutton化してタップできるように */}
+          {/* 画像枠：タップで画像選択 */}
           <button
             type="button"
             onClick={openFilePicker}
@@ -130,6 +129,7 @@ export default function MyPage() {
               flexShrink: 0,
             }}
             aria-label="プロフィール画像を選択"
+            title="タップして画像を選択"
           >
             {profile.imageDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -143,24 +143,26 @@ export default function MyPage() {
             )}
           </button>
 
+          {/* inputは非表示にしてref経由で開く */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={onPickImage}
+            style={{ display: "none" }}
+          />
+
+          {/* 右側：名前入力（元「画像を選ぶ」ボタンの位置） */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, opacity: 0.85, marginBottom: 6 }}>
-              画像
+            <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6 }}>
+              名前（必須）
             </div>
-
-            {/* ★変更：inputは非表示にしてref経由で開く */}
             <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={onPickImage}
-              style={{ display: "none" }}
-            />
-
-            {/* ★追加：明示的なボタンでも開ける（スマホで分かりやすい） */}
-            <button
-              type="button"
-              onClick={openFilePicker}
+              value={profile.name}
+              onChange={(e) =>
+                setProfile((p) => ({ ...p, name: e.target.value }))
+              }
+              placeholder="例）辻 楓太"
               style={{
                 width: "100%",
                 padding: "12px 12px",
@@ -168,28 +170,19 @@ export default function MyPage() {
                 border: "1px solid rgba(255,255,255,0.14)",
                 background: "rgba(255,255,255,0.06)",
                 color: "white",
-                fontWeight: 800,
+                outline: "none",
+                fontSize: 15,
               }}
-            >
-              画像を選ぶ
-            </button>
-
+            />
             <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-              ※ハッカソン用：いまは端末内に保存（後でFirebase Storageに変更可能）
+              画像は左のアイコンをタップして変更できます
             </div>
           </div>
         </div>
 
         <div style={{ height: 16 }} />
 
-        {/* 入力フォーム */}
-        <Field
-          label="名前（必須）"
-          value={profile.name}
-          onChange={(v) => setProfile((p) => ({ ...p, name: v }))}
-          placeholder="例）辻 楓太"
-        />
-
+        {/* 入力フォーム（名前欄は上に移動したので削除） */}
         <Field
           label="所属（自由記入）"
           value={profile.affiliation}
