@@ -149,13 +149,13 @@ export default function MapComponent() {
               padding: "14px 16px",
               borderRadius: 14,
               border: "none",
-              background: "#f59e0b",
+              background: "rgba(255,255,255)",
               color: "#111827",
               fontWeight: 800,
               fontSize: 16,
             }}
           >
-            マイページ
+            マイページ編集
           </button>
 
           <button
@@ -165,7 +165,7 @@ export default function MapComponent() {
               padding: "14px 16px",
               borderRadius: 14,
               border: "none",
-              background: "rgba(255,255,255,0.14)",
+              background: "#f59e0b",
               color: "white",
               fontWeight: 800,
               fontSize: 16,

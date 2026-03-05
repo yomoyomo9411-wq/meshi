@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// ★あなたの配置に合わせて import パスを直してください
+import QRCode from "qrcode";
+import { onAuthStateChanged, type User } from "firebase/auth";
+
 import { auth } from "../lib/firebase";
 import { fetchProfile, type ProfileDoc } from "../lib/profileClient";
-import { onAuthStateChanged, type User } from "firebase/auth";
 
 const defaultProfile: ProfileDoc = {
   name: "",
@@ -26,7 +27,17 @@ export default function MeisiPage() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const hasProfile = useMemo(() => profile.name.trim().length > 0, [profile.name]);
+  // QR表示用
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [qrText, setQrText] = useState<string>("");
+
+  // ✅ QR拡大モーダル
+  const [qrOpen, setQrOpen] = useState(false);
+
+  const hasProfile = useMemo(
+    () => profile.name.trim().length > 0,
+    [profile.name]
+  );
 
   const loadFromFirestore = async (uid: string) => {
     setErrorMsg("");
@@ -35,7 +46,7 @@ export default function MeisiPage() {
       const p = await fetchProfile(uid);
       if (!p) {
         setProfile(defaultProfile);
-        setErrorMsg("プロフィールが見つかりませんでした。マイページで保存してください。");
+        setErrorMsg("プロフィールが見つかりませんでした。編集画面で保存してください。");
         return;
       }
       setProfile({ ...defaultProfile, ...p });
@@ -47,7 +58,34 @@ export default function MeisiPage() {
     }
   };
 
-  // ① ログイン状態を監視 → uid 取得 → Firestore 読み込み
+  // QRの中身（最初はUIDだけが堅い）
+  const buildQrPayload = (u: User) => {
+    // 例: uid:xxxxxxxx
+    return `uid:${u.uid}`;
+
+    // URLで開ける形式にしたいなら（将来のおすすめ）
+    // return `https://<your-vercel-domain>/p/${u.uid}`;
+  };
+
+  const generateQr = async (u: User) => {
+    const payload = buildQrPayload(u);
+    setQrText(payload);
+
+    try {
+      const url = await QRCode.toDataURL(payload, {
+        margin: 1,
+        scale: 10,
+        errorCorrectionLevel: "M",
+      });
+      setQrDataUrl(url);
+    } catch (e) {
+      console.error(e);
+      setQrDataUrl("");
+      setErrorMsg("QRの生成に失敗しました（qrcode未インストール等を確認）");
+    }
+  };
+
+  // ① ログイン監視 → Firestore読み込み → QR生成
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
@@ -55,23 +93,29 @@ export default function MeisiPage() {
 
       if (!u) {
         setProfile(defaultProfile);
+        setQrDataUrl("");
+        setQrText("");
+        setQrOpen(false);
         setErrorMsg("ログインしていません。ログイン後に名刺を表示できます。");
         return;
       }
+
       await loadFromFirestore(u.uid);
+      await generateQr(u);
     });
 
     return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ② 画面復帰時にも再読込（MyPageで保存→戻る→名刺、で最新化）
+  // ② 画面復帰時にも再読込（編集→戻るで最新化）
   useEffect(() => {
     const onFocus = () => {
       if (user) loadFromFirestore(user.uid);
     };
     const onVisibility = () => {
-      if (document.visibilityState === "visible" && user) loadFromFirestore(user.uid);
+      if (document.visibilityState === "visible" && user)
+        loadFromFirestore(user.uid);
     };
 
     window.addEventListener("focus", onFocus);
@@ -84,7 +128,7 @@ export default function MeisiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // SNSリンクがURLじゃない入力でも落ちないようにする（任意）
+  // SNSリンク整形（任意）
   const snsHref = useMemo(() => {
     const s = profile.sns?.trim();
     if (!s) return "";
@@ -95,8 +139,96 @@ export default function MeisiPage() {
 
   const showLoading = !loadedAuth || loadingProfile;
 
+  // ESCでモーダル閉じる（PC便利）
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setQrOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
-    <div style={{ minHeight: "100vh", background: "#0b1220", color: "white", padding: 16 }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0b1220",
+        color: "white",
+        padding: 16,
+      }}
+    >
+      {/* ✅ QR拡大モーダル */}
+      {qrOpen && qrDataUrl && (
+        <div
+          onClick={() => setQrOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(6px)",
+            display: "grid",
+            placeItems: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(92vw, 420px)",
+              borderRadius: 18,
+              background: "rgba(255,255,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.14)",
+              boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
+              padding: 16,
+              display: "grid",
+              gap: 12,
+              justifyItems: "center",
+            }}
+          >
+            <div style={{ fontWeight: 900 }}>交換用QR（拡大）</div>
+
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={qrDataUrl}
+              alt="qr-large"
+              style={{
+                width: "min(80vw, 320px)",
+                height: "min(80vw, 320px)",
+                borderRadius: 16,
+                background: "white",
+              }}
+            />
+
+            <div
+              style={{
+                fontSize: 12,
+                opacity: 0.75,
+                wordBreak: "break-all",
+                textAlign: "center",
+              }}
+            >
+              {qrText}
+            </div>
+
+            <button
+              onClick={() => setQrOpen(false)}
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: 14,
+                border: "none",
+                background: "rgba(255,255,255,0.14)",
+                color: "white",
+                fontWeight: 900,
+              }}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ヘッダー */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <button
@@ -150,14 +282,18 @@ export default function MeisiPage() {
                 fontWeight: 900,
               }}
             >
-              マイページへ
+              編集（/me）へ
             </button>
           </div>
-          {errorMsg && <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>{errorMsg}</div>}
+          {errorMsg && (
+            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
+              {errorMsg}
+            </div>
+          )}
         </div>
       ) : !hasProfile ? (
         <div style={{ marginTop: 16, opacity: 0.9 }}>
-          プロフィールが未設定です。マイページで保存してください。
+          プロフィールが未設定です。編集画面で保存してください。
           <div style={{ marginTop: 12 }}>
             <button
               onClick={() => router.push("/me")}
@@ -170,10 +306,14 @@ export default function MeisiPage() {
                 fontWeight: 900,
               }}
             >
-              マイページへ
+              編集（/me）へ
             </button>
           </div>
-          {errorMsg && <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>{errorMsg}</div>}
+          {errorMsg && (
+            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.85 }}>
+              {errorMsg}
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -183,7 +323,7 @@ export default function MeisiPage() {
             </div>
           )}
 
-          {/* 名刺（仮デザイン） */}
+          {/* 名刺カード */}
           <div
             style={{
               marginTop: 16,
@@ -191,74 +331,136 @@ export default function MeisiPage() {
               padding: 16,
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.10)",
+              display: "grid",
+              gap: 14,
+              position: "relative", // ✅ 右上配置のため
             }}
           >
+            {/* ✅ 右上QR（小） */}
+            {qrDataUrl && (
+              <button
+                type="button"
+                onClick={() => setQrOpen(true)}
+                style={{
+                  position: "absolute",
+                  top: 14,
+                  right: 14,
+                  width: 92,
+                  height: 92,
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.06)",
+                  padding: 6,
+                  cursor: "pointer",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+                aria-label="QRコードを拡大表示"
+                title="タップで拡大"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrDataUrl}
+                  alt="my-qr"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 10,
+                    background: "white",
+                  }}
+                />
+              </button>
+            )}
+
+            {/* 上：プロフィール */}
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               <div
                 style={{
                   width: 76,
                   height: 76,
-                  borderRadius: 999,
+                  borderRadius: 16,
                   overflow: "hidden",
                   background: "rgba(255,255,255,0.10)",
                   border: "1px solid rgba(255,255,255,0.12)",
-                  flexShrink: 0,
                   display: "grid",
                   placeItems: "center",
+                  flexShrink: 0,
                 }}
               >
                 {profile.photoURL ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={profile.photoURL}
-                    alt="avatar"
+                    alt="profile"
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 ) : (
-                  <div style={{ fontWeight: 800, opacity: 0.8 }}>No Img</div>
+                  <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
                 )}
               </div>
 
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 22, fontWeight: 900 }}>{profile.name}</div>
-                {profile.affiliation && (
-                  <div style={{ marginTop: 4, opacity: 0.85 }}>{profile.affiliation}</div>
+              {/* QRが右上にある分、テキスト領域が重ならないよう右側に余白 */}
+              <div style={{ minWidth: 0, paddingRight: 110 }}>
+                <div style={{ fontWeight: 900, fontSize: 18 }}>
+                  {profile.name}
+                </div>
+                <div style={{ opacity: 0.85, marginTop: 4 }}>
+                  {profile.affiliation || "（所属未入力）"}
+                </div>
+                {snsHref && (
+                  <a
+                    href={snsHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: "inline-block",
+                      marginTop: 6,
+                      color: "#60a5fa",
+                      fontWeight: 800,
+                    }}
+                  >
+                    SNSを見る
+                  </a>
                 )}
               </div>
             </div>
 
-            {!!profile.sns && (
-              <div style={{ marginTop: 12, fontSize: 14, opacity: 0.9, wordBreak: "break-all" }}>
-                SNS:{" "}
-                {snsHref ? (
-                  <a href={snsHref} target="_blank" rel="noreferrer" style={{ color: "#93c5fd" }}>
-                    {profile.sns}
-                  </a>
-                ) : (
-                  <span>{profile.sns}</span>
-                )}
+            {/* 活動履歴 */}
+            {profile.history?.trim() && (
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 14,
+                  background: "rgba(0,0,0,0.25)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: 1.5,
+                }}
+              >
+                {profile.history}
               </div>
             )}
 
-            {!!profile.history && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 6 }}>経歴</div>
-                <div
-                  style={{
-                    padding: 12,
-                    borderRadius: 14,
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    whiteSpace: "pre-wrap",
-                    maxHeight: 220,
-                    overflowY: "auto",
-                    WebkitOverflowScrolling: "touch",
-                  }}
-                >
-                  {profile.history}
-                </div>
+            {/* QRの説明（小さく） */}
+            {qrDataUrl && (
+              <div style={{ fontSize: 12, opacity: 0.7 }}>
+                右上のQRを相手に読み取ってもらって交換（タップで拡大できます）
               </div>
             )}
+
+            <button
+              onClick={() => router.push("/me")}
+              style={{
+                padding: "12px 14px",
+                borderRadius: 14,
+                border: "none",
+                background: "rgba(255,255,255,0.12)",
+                color: "white",
+                fontWeight: 900,
+              }}
+            >
+              編集（/me）へ
+            </button>
           </div>
         </>
       )}
