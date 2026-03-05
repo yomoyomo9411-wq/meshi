@@ -62,11 +62,7 @@ export default function MapComponent() {
 
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
-      <style>{`
-        .leaflet-tile-pane {
-          filter: brightness(0.5) contrast(1.2) saturate(0.8);
-        }
-      `}</style>
+      
       <MapContainer
         center={TOKYO_STATION}
         zoom={zoom}
