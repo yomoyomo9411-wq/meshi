@@ -34,7 +34,10 @@ export default function MapComponent() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const latlng: LatLngExpression = [pos.coords.latitude, pos.coords.longitude];
+        const latlng: LatLngExpression = [
+          pos.coords.latitude,
+          pos.coords.longitude,
+        ];
         setCenter(latlng);
         setMarkerPos(latlng);
         setStatus("現在地を表示しています。");
@@ -48,7 +51,10 @@ export default function MapComponent() {
     setStatus("現在地を再取得中…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const latlng: LatLngExpression = [pos.coords.latitude, pos.coords.longitude];
+        const latlng: LatLngExpression = [
+          pos.coords.latitude,
+          pos.coords.longitude,
+        ];
         setCenter(latlng);
         setMarkerPos(latlng);
         setStatus("現在地を表示しています。");
@@ -62,11 +68,10 @@ export default function MapComponent() {
 
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
-      
       <MapContainer
         center={TOKYO_STATION}
         zoom={zoom}
-        style={{ height: "100%", width: "100%" , zIndex: 0}}
+        style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
           attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
@@ -75,38 +80,100 @@ export default function MapComponent() {
 
         <Recenter center={safeCenter} zoom={zoom} />
 
-        <Marker 
-          position={markerPos} 
+        <Marker
+          position={markerPos}
           icon={blueShinyStarIcon as L.DivIcon}
           eventHandlers={{
             click: () => {
-              router.push("/me"); // 【重要】これで本物のマイページに飛びます
+              router.push("/me"); // 星クリックでマイページへ（現状維持）
             },
           }}
         />
       </MapContainer>
 
       {/* ステータスバー */}
-      <div style={{ position: "fixed", top: 10, left: 10, right: 10, zIndex: 2000, padding: "10px 12px", background: "rgba(0,0,0,0.6)", color: "white", borderRadius: 12, fontSize: 14 }}>
+      <div
+        style={{
+          position: "fixed",
+          top: 10,
+          left: 10,
+          right: 10,
+          zIndex: 2000,
+          padding: "10px 12px",
+          background: "rgba(0,0,0,0.6)",
+          color: "white",
+          borderRadius: 12,
+          fontSize: 14,
+        }}
+      >
         {status}
       </div>
 
       {/* 右下：現在地へ */}
       <button
         onClick={refetchLocation}
-        style={{ position: "fixed", bottom: 72, right: 16, zIndex: 2000, padding: "12px 14px", borderRadius: 999, border: "none", background: "#2563eb", color: "white", fontWeight: 700, boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}
+        style={{
+          position: "fixed",
+          bottom: 72,
+          right: 16,
+          zIndex: 2000,
+          padding: "12px 14px",
+          borderRadius: 999,
+          border: "none",
+          background: "#2563eb",
+          color: "white",
+          fontWeight: 700,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+        }}
       >
         現在地へ
       </button>
 
-      {/* 下部：マイページボタン */}
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 2000, padding: 12, background: "rgba(0,0,0,0.55)" }}>
-        <button
-          onClick={() => router.push("/me")}
-          style={{ width: "100%", padding: "14px 16px", borderRadius: 14, border: "none", background: "#f59e0b", color: "#111827", fontWeight: 800, fontSize: 16 }}
-        >
-          マイページ
-        </button>
+      {/* 下部：マイページ / 名刺 ボタン */}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 2000,
+          padding: 12,
+          background: "rgba(0,0,0,0.55)",
+        }}
+      >
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() => router.push("/me")}
+            style={{
+              flex: 1,
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: "none",
+              background: "#f59e0b",
+              color: "#111827",
+              fontWeight: 800,
+              fontSize: 16,
+            }}
+          >
+            マイページ
+          </button>
+
+          <button
+            onClick={() => router.push("/meisi")}
+            style={{
+              flex: 1,
+              padding: "14px 16px",
+              borderRadius: 14,
+              border: "none",
+              background: "rgba(255,255,255,0.14)",
+              color: "white",
+              fontWeight: 800,
+              fontSize: 16,
+            }}
+          >
+            名刺
+          </button>
+        </div>
       </div>
     </div>
   );
