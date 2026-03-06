@@ -1,11 +1,19 @@
-"use client"; // 追加
+"use client";
 
 import dynamic from "next/dynamic";
 
-// 地図を「ブラウザ専用（ssr: false）」として読み込む
+// 地図コンポーネントをサーバー側で読み込まない（ssr: false）
 const Map = dynamic(() => import("./MapComponent"), { 
   ssr: false,
-  loading: () => <div style={{ height: "100vh", backgroundColor: "#f3f4f6" }}>地図を読み込み中...</div>
+  loading: () => (
+    <div style={{ 
+      height: "100vh", width: "100vw", display: "flex", 
+      justifyContent: "center", alignItems: "center", 
+      backgroundColor: "#0b1220", color: "white" 
+    }}>
+      地図を読み込み中...
+    </div>
+  )
 });
 
 export default function Home() {

@@ -24,6 +24,10 @@ function Recenter({ center, zoom }: { center: [number, number]; zoom: number }) 
 
 export default function MapComponent() {
   const router = useRouter();
+  
+  // --- ★SSRエラー防止用のマウントチェック ---
+  const [mounted, setMounted] = useState(false);
+  
   const [user, setUser] = useState<User | null>(null);
   const [encounters, setEncounters] = useState<any[]>([]);
   const [center, setCenter] = useState<[number, number]>(TOYAMA_PREF_UNIV);
@@ -31,8 +35,14 @@ export default function MapComponent() {
   const [status, setStatus] = useState("現在地を取得中…");
   const zoom = 15;
 
+  // ブラウザにマウントされたら実行
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // データ取得
   useEffect(() => {
+    if (!mounted) return;
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (!u) { setEncounters([]); return; }
@@ -42,10 +52,11 @@ export default function MapComponent() {
       } catch (e) { console.error(e); }
     });
     return () => unsub();
-  }, []);
+  }, [mounted]);
 
   // 現在地取得
   useEffect(() => {
+    if (!mounted) return;
     if (!("geolocation" in navigator)) {
       setStatus("この端末では位置情報が使えません。");
       return;
@@ -58,13 +69,13 @@ export default function MapComponent() {
         setStatus("現在地を表示中");
       },
       () => {
-        setStatus("位置情報が取得できませんでした。"); // 要望のメッセージ
+        setStatus("位置情報が取得できませんでした。");
         setCenter(TOYAMA_PREF_UNIV);
         setMarkerPos(TOYAMA_PREF_UNIV);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );
-  }, []);
+  }, [mounted]);
 
   const refetchLocation = () => {
     setStatus("現在地を再取得中…");
@@ -81,6 +92,9 @@ export default function MapComponent() {
   };
 
   const safeCenter = useMemo(() => center, [center]);
+
+  // --- ★準備ができるまで何も表示しない（エラー回避の鉄則） ---
+  if (!mounted) return null;
 
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
@@ -116,10 +130,10 @@ export default function MapComponent() {
         {status}
       </div>
 
-      {/* QRスキャン */}
+      {/* QRスキャンボタン */}
       <button onClick={() => router.push("/scan")} style={{ position: "fixed", bottom: 160, right: 16, zIndex: 2000, width: 64, height: 64, borderRadius: 16, border: "none", background: "#22c55e", color: "white", fontWeight: 900, fontSize: 24, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}>QR</button>
 
-      {/* 現在地へ */}
+      {/* 現在地へボタン */}
       <button onClick={refetchLocation} style={{ position: "fixed", bottom: 88, right: 16, zIndex: 2000, padding: "12px 14px", borderRadius: 999, border: "none", background: "#2563eb", color: "white", fontWeight: 700, boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}>現在地へ</button>
 
       {/* 下部4ボタン */}
