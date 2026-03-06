@@ -440,6 +440,7 @@ export default function MeisiPage() {
                   display: "block",
                   borderRadius: 24,
                 }}
+              />
 
               <div
                 style={{
