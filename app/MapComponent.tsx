@@ -116,14 +116,6 @@ export default function MapComponent() {
 
         <Recenter center={safeCenter} zoom={zoom} />
 
-        {/* 自分の現在地 */}
-        <Marker position={safeCenter} icon={purpleOrbIcon as L.DivIcon}>
-          <Popup>
-            <div style={{ textAlign: "center", fontWeight: 700 }}>
-              あなた
-            </div>
-          </Popup>
-        </Marker>
 
         {/* 出会った人の星 */}
         {encounters
