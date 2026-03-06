@@ -498,14 +498,14 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "47.6%",
+                  top: "40%",
                   left: "50%",
                   transform: "translateX(-50%)",
                   width: "72%",
                   textAlign: "center",
-                  color: "#555",
+                  color: "#1f174d",
                   fontWeight: 600,
-                  fontSize: "clamp(13px, 2.2vw, 20px)",
+                  fontSize: "clamp(10px, 2.0vw, 17px)",
                   lineHeight: 1.35,
                 }}
               >
