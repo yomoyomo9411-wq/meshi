@@ -57,3 +57,35 @@ export const yellowShinyStarIcon = typeof window !== "undefined"
       popupAnchor: [0, -20],
     })
   : null;
+
+  // 共通フィルター（紫）
+const purpleFilter = `
+  <filter id="glow-purple" x="-200%" y="-200%" width="500%" height="500%">
+    <feGaussianBlur stdDeviation="1.0" result="blur1"/>
+    <feGaussianBlur stdDeviation="2.8" result="blur2"/>
+    <feMerge>
+      <feMergeNode in="blur2"/>
+      <feMergeNode in="blur2"/>
+      <feMergeNode in="blur1"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>`;
+
+// --- 3. 自分の位置（紫の球） ---
+export const purpleOrbIcon = typeof window !== "undefined"
+  ? L.divIcon({
+      html: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40px" height="40px" style="overflow: visible;">
+          <defs>${purpleFilter}</defs>
+
+          <circle cx="12" cy="12" r="9" fill="#7C3AED" filter="url(#glow-purple)" opacity="0.9"/>
+          <circle cx="12" cy="12" r="6" fill="#A78BFA" filter="url(#glow-purple)"/>
+          <circle cx="12" cy="12" r="3" fill="white" filter="url(#glow-purple)"/>
+
+        </svg>`,
+      className: "custom-orb-icon",
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20],
+    })
+  : null;

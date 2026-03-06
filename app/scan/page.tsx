@@ -149,24 +149,54 @@ export default function ScanPage() {
     };
   }, [user]);
 
-  const handleSaveEncounter = async () => {
-    if (!user || !scannedUid) return;
+  // handleSaveEncounter を以下のように書き換えてください
 
-    try {
-      setSaving(true);
-      setStatus("交換情報を保存しています…");
-      await createEncounter(user.uid, scannedUid);
-      setStatus("交換完了！名刺一覧に追加しました。");
-      setTimeout(() => {
-        router.push("/cards");
-      }, 800);
-    } catch (e) {
-      console.error(e);
+const handleSaveEncounter = async () => {
+  if (!user || !scannedUid) return;
+
+  setSaving(true);
+  setStatus("現在地を取得しています…"); // 進行状況を伝える
+
+  try {
+    // 1. 位置情報の取得を試みる
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 8000, // 8秒でタイムアウト
+      });
+    }).catch(() => {
+      // 位置情報取得に失敗した場合
+      throw new Error("LOCATION_ERROR");
+    });
+
+    // 2. 位置情報が取得できた場合のみ、保存処理に進む
+    setStatus("交換情報を保存しています…");
+    
+    // もし createEncounter が引数に lat, lng を取れるように作ってあるなら渡します
+    // 例: await createEncounter(user.uid, scannedUid, position.coords.latitude, position.coords.longitude);
+    // 今のままでも、createEncounter の中で位置情報を取っている場合は、
+    // ここで許可が取れているのでスムーズに動くはずです。
+    await createEncounter(user.uid, scannedUid);
+
+    setStatus("交換完了！名刺一覧に追加しました。");
+    setTimeout(() => {
+      router.push("/cards");
+    }, 800);
+
+  } catch (e: any) {
+    console.error(e);
+    if (e.message === "LOCATION_ERROR") {
+      // ご要望のメッセージを表示
+      setStatus("位置情報が取得できませんでした。");
+      alert("位置情報が取得できなかったため、交換を中断しました。設定を確認してください。");
+    } else {
       setStatus("保存に失敗しました");
-    } finally {
-      setSaving(false);
     }
-  };
+    // ここで処理が止まる（createEncounterは実行されない、または失敗している）
+  } finally {
+    setSaving(false);
+  }
+};
 
   const restartScan = () => {
     router.refresh();
