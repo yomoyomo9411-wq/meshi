@@ -1,23 +1,37 @@
 import L from "leaflet";
 
-export const blueShinyStarIcon = typeof window !== "undefined" 
-  ? L.divIcon({
-      html: `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32px" height="42px">
-          <!-- ピンの影（少し浮かせるように見せる） -->
-          <ellipse cx="12" cy="22" rx="5" ry="2" fill="black" opacity="0.2" />
-          <!-- ピンの本体（標準的な青） -->
-          <path 
-            d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8z" 
-            fill="#2563eb" 
+export const createCustomPin = (imageUrl: string | null) => {
+  return L.divIcon({
+    html: `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="45px" height="60px" style="overflow: visible;">
+        <ellipse cx="12" cy="30" rx="7" ry="3" fill="black" opacity="0.2" />
+        <path 
+          d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20c0-6.63-5.37-12-12-12z" 
+          fill="#2563eb" 
+        />
+        <!-- 中心の白い土台（画像がない時はここが真っ白に見えます） -->
+        <circle cx="12" cy="11.5" r="8.5" fill="white" />
+        
+        <defs>
+          <clipPath id="avatarClip">
+            <circle cx="12" cy="11.5" r="7.5" />
+          </clipPath>
+        </defs>
+        
+        <!-- imageUrlがある（Firestoreから取得できた）時だけ画像を表示 -->
+        ${imageUrl ? `
+          <image 
+            x="4.5" y="4" 
+            width="15" height="15" 
+            href="${imageUrl}" 
+            clip-path="url(#avatarClip)" 
+            preserveAspectRatio="xMidYMid slice"
           />
-          <!-- ピンの中央の白い円 -->
-          <circle cx="12" cy="8" r="3" fill="white" />
-        </svg>
-      `,
-      className: "custom-standard-pin",
-      iconSize: [32, 42],
-      iconAnchor: [16, 42], // ピンの先端（下）を正確に現在地に合わせる
-      popupAnchor: [0, -40], // ポップアップが出る位置
-    })
-  : null;
+        ` : ''}
+      </svg>
+    `,
+    className: "custom-user-pin",
+    iconSize: [45, 60],
+    iconAnchor: [22.5, 60],
+  });
+};
