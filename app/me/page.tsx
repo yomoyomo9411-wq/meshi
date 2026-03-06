@@ -225,8 +225,8 @@ export default function MyPage() {
         style={{
           position: "fixed",
           left: 30,
-          bottom: 16,
-          width: 200,
+          bottom: 1,
+          width: 150,
           height: "auto",
           zIndex: 0,
           pointerEvents: "none",
@@ -372,7 +372,7 @@ export default function MyPage() {
                   onChange={(e) =>
                     setProfile((p) => ({ ...p, name: e.target.value }))
                   }
-                  placeholder="例）辻 楓太"
+                  placeholder="例）山田 瑠美菜"
                   style={{
                     width: "100%",
                     padding: "12px 12px",
@@ -396,7 +396,7 @@ export default function MyPage() {
               label="所属（自由記入）"
               value={profile.affiliation}
               onChange={(v) => setProfile((p) => ({ ...p, affiliation: v }))}
-              placeholder="例）富山県立大学 情報システム工学科"
+              placeholder="例）月島工業株式会社"
             />
 
             <Field
@@ -423,13 +423,13 @@ export default function MyPage() {
                   padding: "14px 16px",
                   borderRadius: 14,
                   border: "none",
-                  background: canSave ? "#22c55e" : "rgba(34,197,94,0.35)",
-                  color: "#0b1220",
+                  background: canSave ? "#d9ff00" : "rgba(220, 255, 164, 0.35)",
+                  color: "#030303",
                   fontWeight: 900,
                   fontSize: 16,
                 }}
               >
-                保存（Firestore）
+                保存
               </button>
 
               <button

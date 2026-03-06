@@ -92,15 +92,16 @@ export default function ScanPage() {
 
             const uid = match[1];
 
+            // ⭐ ここ追加（null対策）
+            if (!user) return;
+
             if (uid === user.uid) {
               setStatus("自分自身のQRは交換できません");
               return;
             }
 
-            // 二重読み取り防止
             hasScannedRef.current = true;
 
-            // 先に scanner を安全に止める
             const scanner = qrRef.current;
             qrRef.current = null;
             void stopScannerSafely(scanner);
@@ -118,6 +119,7 @@ export default function ScanPage() {
                 history: p?.history ?? "",
                 photoURL: p?.photoURL ?? "",
               });
+
               setStatus("読み取り完了。内容を確認して交換してください。");
             } catch (e) {
               console.error(e);
@@ -125,9 +127,7 @@ export default function ScanPage() {
               setStatus("プロフィール取得に失敗しました。もう一度読み取ってください。");
             }
           },
-          () => {
-            // 読み取り待機中のエラーは無視
-          }
+          () => {}
         );
       } catch (e) {
         console.error(e);
@@ -152,17 +152,39 @@ export default function ScanPage() {
   const handleSaveEncounter = async () => {
     if (!user || !scannedUid) return;
 
+    setSaving(true);
+    setStatus("現在地を取得しています…");
+
     try {
-      setSaving(true);
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 8000,
+        });
+      }).catch(() => {
+        throw new Error("LOCATION_ERROR");
+      });
+
       setStatus("交換情報を保存しています…");
+
       await createEncounter(user.uid, scannedUid);
+
       setStatus("交換完了！名刺一覧に追加しました。");
+
       setTimeout(() => {
         router.push("/cards");
       }, 800);
-    } catch (e) {
+
+    } catch (e: any) {
       console.error(e);
-      setStatus("保存に失敗しました");
+
+      if (e.message === "LOCATION_ERROR") {
+        setStatus("位置情報が取得できませんでした。");
+        alert("位置情報が取得できなかったため、交換を中断しました。設定を確認してください。");
+      } else {
+        setStatus("保存に失敗しました");
+      }
+
     } finally {
       setSaving(false);
     }
@@ -196,7 +218,10 @@ export default function ScanPage() {
         >
           ← 地図へ
         </button>
-        <div style={{ fontSize: 18, fontWeight: 900 }}>QR読み取り</div>
+
+        <div style={{ fontSize: 18, fontWeight: 900 }}>
+          QR読み取り
+        </div>
       </div>
 
       <div
@@ -236,7 +261,9 @@ export default function ScanPage() {
             gap: 14,
           }}
         >
-          <div style={{ fontWeight: 900, fontSize: 18 }}>交換相手の名刺</div>
+          <div style={{ fontWeight: 900, fontSize: 18 }}>
+            交換相手の名刺
+          </div>
 
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             <div
@@ -253,14 +280,15 @@ export default function ScanPage() {
               }}
             >
               {scannedProfile.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={scannedProfile.photoURL}
                   alt="profile"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
-                <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
+                <div style={{ fontWeight: 800, opacity: 0.85 }}>
+                  No
+                </div>
               )}
             </div>
 
@@ -268,6 +296,7 @@ export default function ScanPage() {
               <div style={{ fontWeight: 900, fontSize: 18 }}>
                 {scannedProfile.name || "名前未設定"}
               </div>
+
               <div style={{ opacity: 0.85, marginTop: 4 }}>
                 {scannedProfile.affiliation || "所属未設定"}
               </div>
