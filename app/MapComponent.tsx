@@ -144,10 +144,10 @@ export default function MapComponent() {
             const n2 = parseInt(id.slice(-3), 16);
 
             const latOffset =
-              ((Number.isFinite(n1) ? n1 : 0) % 12 - 6) * 0.00005;
+              ((Number.isFinite(n1) ? n1 : 0) % 10 - 5) * 0.00003;
 
             const lngOffset =
-              ((Number.isFinite(n2) ? n2 : 0) % 12 - 6) * 0.00005;
+              ((Number.isFinite(n2) ? n2 : 0) % 10 - 5) * 0.00003;
 
             return (
               <Marker
@@ -241,10 +241,65 @@ export default function MapComponent() {
           gap: 8,
         }}
       >
-        <button onClick={() => router.push("/scan")}>QRスキャン</button>
-        <button onClick={() => router.push("/me")}>編集</button>
-        <button onClick={() => router.push("/meisi")}>My名刺</button>
-        <button onClick={() => router.push("/cards")}>一覧</button>
+        <button
+          onClick={() => router.push("/scan")}
+          style={{
+            padding: "14px 4px",
+            borderRadius: 12,
+            border: "none",
+            background: "#22c55e",
+            color: "white",
+            fontWeight: 800,
+            fontSize: "12px",
+          }}
+        >
+          QRスキャン
+        </button>
+
+        <button
+          onClick={() => router.push("/me")}
+          style={{
+            padding: "14px 4px",
+            borderRadius: 12,
+            border: "none",
+            background: "white",
+            color: "#111827",
+            fontWeight: 800,
+            fontSize: "12px",
+          }}
+        >
+          編集
+        </button>
+
+        <button
+          onClick={() => router.push("/meisi")}
+          style={{
+            padding: "14px 4px",
+            borderRadius: 12,
+            border: "none",
+            background: "#f59e0b",
+            color: "#111827",
+            fontWeight: 800,
+            fontSize: "12px",
+          }}
+        >
+          My名刺
+        </button>
+
+        <button
+          onClick={() => router.push("/cards")}
+          style={{
+            padding: "14px 4px",
+            borderRadius: 12,
+            border: "none",
+            background: "#60a5fa",
+            color: "#111827",
+            fontWeight: 800,
+            fontSize: "12px",
+          }}
+        >
+          一覧
+        </button>
       </div>
     </div>
   );
