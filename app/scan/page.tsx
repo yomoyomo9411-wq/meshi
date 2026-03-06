@@ -92,15 +92,16 @@ export default function ScanPage() {
 
             const uid = match[1];
 
+            // ⭐ ここ追加（null対策）
+            if (!user) return;
+
             if (uid === user.uid) {
               setStatus("自分自身のQRは交換できません");
               return;
             }
 
-            // 二重読み取り防止
             hasScannedRef.current = true;
 
-            // 先に scanner を安全に止める
             const scanner = qrRef.current;
             qrRef.current = null;
             void stopScannerSafely(scanner);
@@ -118,6 +119,7 @@ export default function ScanPage() {
                 history: p?.history ?? "",
                 photoURL: p?.photoURL ?? "",
               });
+
               setStatus("読み取り完了。内容を確認して交換してください。");
             } catch (e) {
               console.error(e);
@@ -125,9 +127,7 @@ export default function ScanPage() {
               setStatus("プロフィール取得に失敗しました。もう一度読み取ってください。");
             }
           },
-          () => {
-            // 読み取り待機中のエラーは無視
-          }
+          () => {}
         );
       } catch (e) {
         console.error(e);
@@ -149,54 +149,46 @@ export default function ScanPage() {
     };
   }, [user]);
 
-  // handleSaveEncounter を以下のように書き換えてください
+  const handleSaveEncounter = async () => {
+    if (!user || !scannedUid) return;
 
-const handleSaveEncounter = async () => {
-  if (!user || !scannedUid) return;
+    setSaving(true);
+    setStatus("現在地を取得しています…");
 
-  setSaving(true);
-  setStatus("現在地を取得しています…"); // 進行状況を伝える
-
-  try {
-    // 1. 位置情報の取得を試みる
-    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 8000, // 8秒でタイムアウト
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 8000,
+        });
+      }).catch(() => {
+        throw new Error("LOCATION_ERROR");
       });
-    }).catch(() => {
-      // 位置情報取得に失敗した場合
-      throw new Error("LOCATION_ERROR");
-    });
 
-    // 2. 位置情報が取得できた場合のみ、保存処理に進む
-    setStatus("交換情報を保存しています…");
-    
-    // もし createEncounter が引数に lat, lng を取れるように作ってあるなら渡します
-    // 例: await createEncounter(user.uid, scannedUid, position.coords.latitude, position.coords.longitude);
-    // 今のままでも、createEncounter の中で位置情報を取っている場合は、
-    // ここで許可が取れているのでスムーズに動くはずです。
-    await createEncounter(user.uid, scannedUid);
+      setStatus("交換情報を保存しています…");
 
-    setStatus("交換完了！名刺一覧に追加しました。");
-    setTimeout(() => {
-      router.push("/cards");
-    }, 800);
+      await createEncounter(user.uid, scannedUid);
 
-  } catch (e: any) {
-    console.error(e);
-    if (e.message === "LOCATION_ERROR") {
-      // ご要望のメッセージを表示
-      setStatus("位置情報が取得できませんでした。");
-      alert("位置情報が取得できなかったため、交換を中断しました。設定を確認してください。");
-    } else {
-      setStatus("保存に失敗しました");
+      setStatus("交換完了！名刺一覧に追加しました。");
+
+      setTimeout(() => {
+        router.push("/cards");
+      }, 800);
+
+    } catch (e: any) {
+      console.error(e);
+
+      if (e.message === "LOCATION_ERROR") {
+        setStatus("位置情報が取得できませんでした。");
+        alert("位置情報が取得できなかったため、交換を中断しました。設定を確認してください。");
+      } else {
+        setStatus("保存に失敗しました");
+      }
+
+    } finally {
+      setSaving(false);
     }
-    // ここで処理が止まる（createEncounterは実行されない、または失敗している）
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   const restartScan = () => {
     router.refresh();
@@ -226,7 +218,10 @@ const handleSaveEncounter = async () => {
         >
           ← 地図へ
         </button>
-        <div style={{ fontSize: 18, fontWeight: 900 }}>QR読み取り</div>
+
+        <div style={{ fontSize: 18, fontWeight: 900 }}>
+          QR読み取り
+        </div>
       </div>
 
       <div
@@ -266,7 +261,9 @@ const handleSaveEncounter = async () => {
             gap: 14,
           }}
         >
-          <div style={{ fontWeight: 900, fontSize: 18 }}>交換相手の名刺</div>
+          <div style={{ fontWeight: 900, fontSize: 18 }}>
+            交換相手の名刺
+          </div>
 
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             <div
@@ -283,14 +280,15 @@ const handleSaveEncounter = async () => {
               }}
             >
               {scannedProfile.photoURL ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={scannedProfile.photoURL}
                   alt="profile"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
-                <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
+                <div style={{ fontWeight: 800, opacity: 0.85 }}>
+                  No
+                </div>
               )}
             </div>
 
@@ -298,6 +296,7 @@ const handleSaveEncounter = async () => {
               <div style={{ fontWeight: 900, fontSize: 18 }}>
                 {scannedProfile.name || "名前未設定"}
               </div>
+
               <div style={{ opacity: 0.85, marginTop: 4 }}>
                 {scannedProfile.affiliation || "所属未設定"}
               </div>
