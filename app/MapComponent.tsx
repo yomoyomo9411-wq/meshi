@@ -1,5 +1,4 @@
 "use client";
-//ばか
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
@@ -130,9 +129,7 @@ export default function MapComponent() {
         {status}
       </div>
 
-      {/* QRスキャンボタン */}
-      <button onClick={() => router.push("/scan")} style={{ position: "fixed", bottom: 160, right: 16, zIndex: 2000, width: 64, height: 64, borderRadius: 16, border: "none", background: "#22c55e", color: "white", fontWeight: 900, fontSize: 24, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}>QR</button>
-
+      
       {/* 現在地へボタン */}
       <button onClick={refetchLocation} style={{ position: "fixed", bottom: 88, right: 16, zIndex: 2000, padding: "12px 14px", borderRadius: 999, border: "none", background: "#2563eb", color: "white", fontWeight: 700, boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}>現在地へ</button>
 
