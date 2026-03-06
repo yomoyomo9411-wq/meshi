@@ -26,7 +26,7 @@ export type EncounterDoc = {
   lat: number;
   lng: number;
   address: string;
-  createdAt: unknown;
+  createdAt: any;
   isLatest: boolean;
   isUnread?: boolean;
   snapshot: EncounterSnapshot;
@@ -103,6 +103,39 @@ export async function fetchEncountersByOwner(ownerUid: string) {
     collection(db, "encounters"),
     where("ownerUid", "==", ownerUid)
   );
+  const result = await getDocs(q);
+
+  const items = result.docs.map((d) => ({
+    id: d.id,
+    ...(d.data() as EncounterDoc),
+  }));
+
+  items.sort((a: any, b: any) => {
+    const aSec = a.createdAt?.seconds ?? 0;
+    const bSec = b.createdAt?.seconds ?? 0;
+    return bSec - aSec;
+  });
+
+  return items;
+}
+
+// 名刺一覧用：相手ごとの最新1件だけ
+export async function fetchLatestCardsByOwner(ownerUid: string) {
+  const all = await fetchEncountersByOwner(ownerUid);
+  return all.filter((item) => item.isLatest === true);
+}
+
+// 相手ごとの履歴一覧
+export async function fetchEncounterHistoryByOwnerAndOther(
+  ownerUid: string,
+  otherUid: string
+) {
+  const q = query(
+    collection(db, "encounters"),
+    where("ownerUid", "==", ownerUid),
+    where("otherUid", "==", otherUid)
+  );
+
   const result = await getDocs(q);
 
   const items = result.docs.map((d) => ({
