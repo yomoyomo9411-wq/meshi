@@ -11,8 +11,6 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./lib/firebase";
 import { fetchEncountersByOwner } from "./lib/encounterClient";
 
-const INITIAL_CENTER: [number, number] = [36.706, 137.213];
-
 function Recenter({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
 
@@ -30,7 +28,7 @@ export default function MapComponent() {
   const [user, setUser] = useState<User | null>(null);
   const [encounters, setEncounters] = useState<any[]>([]);
 
-  const [center, setCenter] = useState<[number, number]>(INITIAL_CENTER);
+  const [center, setCenter] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState("現在地を取得中…");
   const [isLocationError, setIsLocationError] = useState(false);
 
@@ -95,7 +93,7 @@ export default function MapComponent() {
 
   const safeCenter = useMemo(() => center, [center]);
 
-  if (!mounted) return null;
+  if (!mounted || !safeCenter) return null;
 
   return (
     <div
