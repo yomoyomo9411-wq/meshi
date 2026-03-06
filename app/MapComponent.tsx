@@ -116,7 +116,9 @@ const blueStarIcon = L.divIcon({
         fill="#3B82F6"
       />
 
+
     </svg>
+
 
   </div>
   `,
@@ -149,6 +151,7 @@ function Recenter({
 export default function MapComponent() {
   const router = useRouter();
 
+
   const [user, setUser] = useState<User | null>(null);
   const [encounters, setEncounters] = useState<any[]>([]);
 
@@ -157,7 +160,9 @@ export default function MapComponent() {
   const [status, setStatus] = useState("現在地を取得中…");
   const zoom = 15;
 
+  // Firebaseから画像を取得
   useEffect(() => {
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
 
@@ -191,10 +196,12 @@ export default function MapComponent() {
           pos.coords.latitude,
           pos.coords.longitude,
         ];
+
         setCenter(latlng);
         setMarkerPos(latlng);
         setStatus("現在地を表示しています。");
       },
+
       () => {
         setStatus("位置情報を取得できませんでした。富山県立大学を中心に表示します。");
         setCenter(TOYAMA_PREF_UNIV);
@@ -205,19 +212,23 @@ export default function MapComponent() {
         timeout: 8000,
         maximumAge: 0,
       }
+
     );
   }, []);
 
+  // 【ここが抜けていました！】現在地を再取得する関数
   const refetchLocation = () => {
     if (!("geolocation" in navigator)) return;
 
     setStatus("現在地を再取得中…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+
         const latlng: [number, number] = [
           pos.coords.latitude,
           pos.coords.longitude,
         ];
+
         setCenter(latlng);
         setMarkerPos(latlng);
         setStatus("現在地を表示しています。");
@@ -231,25 +242,91 @@ export default function MapComponent() {
 
   const safeCenter = useMemo(() => center, [center]);
 
-  const formatTime = (createdAt: any) => {
-    const sec = createdAt?.seconds;
-    if (!sec) return "保存直後";
-    return new Date(sec * 1000).toLocaleString("ja-JP");
-  };
+const formatTime = (createdAt: any) => {
+  const sec = createdAt?.seconds;
+  if (!sec) return "保存直後";
+  return new Date(sec * 1000).toLocaleString("ja-JP");
+};
 
+// アイコン拡大画面
+if (showLargeIcon) {
+  return (
+    <div
+      style={{
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "#111827",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div style={{ position: "relative", marginBottom: "30px" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: -15,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle, rgba(37, 99, 235, 0.6) 0%, transparent 70%)",
+            filter: "blur(10px)",
+          }}
+        />
+        {userIcon ? (
+          <img
+            src={userIcon}
+            alt="Profile"
+            style={{
+              width: "250px",
+              height: "250px",
+              borderRadius: "50%",
+              border: "5px solid white",
+              position: "relative",
+              objectFit: "cover",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "250px",
+              height: "250px",
+              borderRadius: "50%",
+              backgroundColor: "#374151",
+            }}
+          />
+        )}
+      </div>
+      <button
+        onClick={() => setShowLargeIcon(false)}
+        style={{
+          padding: "12px 40px",
+          borderRadius: "30px",
+          border: "none",
+          backgroundColor: "white",
+          color: "#111827",
+          fontWeight: "bold",
+          fontSize: "16px",
+        }}
+      >
+        地図に戻る
+      </button>
+    </div>
+  );
+}
+
+// 通常の地図画面
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
-      <MapContainer
-        center={TOKYO_STATION}
-        zoom={zoom}
-        style={{ height: "100%", width: "100%", zIndex: 0 }}
-      >
+      <MapContainer center={TOKYO_STATION} zoom={zoom} style={{ height: "100%", width: "100%", zIndex: 0 }}>
         <TileLayer
+
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
 
+        />
         <Recenter center={safeCenter} zoom={zoom} />
+
 
         <Marker position={markerPos} icon={customPinIcon}>
           <Popup>
@@ -341,9 +418,11 @@ export default function MapComponent() {
           fontWeight: 700,
           boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
         }}
+
       >
         現在地へ
       </button>
+
 
       <div
         style={{
@@ -403,6 +482,7 @@ export default function MapComponent() {
         >
           名刺一覧
         </button>
+
       </div>
     </div>
   );
