@@ -225,8 +225,8 @@ export default function MyPage() {
         style={{
           position: "fixed",
           left: 30,
-          bottom: 16,
-          width: 200,
+          bottom: 1,
+          width: 150,
           height: "auto",
           zIndex: 0,
           pointerEvents: "none",
