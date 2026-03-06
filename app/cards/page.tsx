@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
 import { auth } from "../lib/firebase";
-import { fetchEncountersByOwner } from "../lib/encounterClient";
+import {
+  fetchEncountersByOwner,
+  markEncountersAsRead,
+} from "../lib/encounterClient";
 
 export default function CardsPage() {
   const router = useRouter();
@@ -13,6 +16,7 @@ export default function CardsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showNewBanner, setShowNewBanner] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -28,6 +32,13 @@ export default function CardsPage() {
       try {
         const data = await fetchEncountersByOwner(u.uid);
         setCards(data);
+
+        const hasUnread = data.some((item) => item.isUnread === true);
+        setShowNewBanner(hasUnread);
+
+        if (hasUnread) {
+          await markEncountersAsRead(u.uid);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -69,6 +80,22 @@ export default function CardsPage() {
         </button>
         <div style={{ fontSize: 18, fontWeight: 900 }}>名刺一覧</div>
       </div>
+
+      {showNewBanner && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: 12,
+            borderRadius: 12,
+            background: "linear-gradient(90deg, #f59e0b, #fde68a)",
+            color: "#111827",
+            fontWeight: 900,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+          }}
+        >
+          新しい名刺が追加されました
+        </div>
+      )}
 
       {loading ? (
         <div style={{ marginTop: 16 }}>読み込み中…</div>

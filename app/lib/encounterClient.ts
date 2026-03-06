@@ -28,19 +28,17 @@ export type EncounterDoc = {
   address: string;
   createdAt: unknown;
   isLatest: boolean;
+  isUnread?: boolean;
   snapshot: EncounterSnapshot;
 };
 
 export async function createEncounter(ownerUid: string, otherUid: string) {
-  // 交換した場所は共通
   const { lat, lng } = await getCurrentPositionWithFallback();
   const address = await reverseGeocode(lat, lng);
 
-  // お互いの最新プロフィールを取得
   const ownerProfile = await fetchProfile(ownerUid);
   const otherProfile = await fetchProfile(otherUid);
 
-  // owner視点では「相手のプロフィール」を保存
   const snapshotForOwner: EncounterSnapshot = {
     name: otherProfile?.name ?? "",
     affiliation: otherProfile?.affiliation ?? "",
@@ -49,7 +47,6 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     photoURL: otherProfile?.photoURL ?? "",
   };
 
-  // other視点では「自分のプロフィール」を保存
   const snapshotForOther: EncounterSnapshot = {
     name: ownerProfile?.name ?? "",
     affiliation: ownerProfile?.affiliation ?? "",
@@ -58,13 +55,9 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     photoURL: ownerProfile?.photoURL ?? "",
   };
 
-  // ① owner側の過去最新を青にする
   await clearLatestEncounter(ownerUid, otherUid);
-
-  // ② other側の過去最新を青にする
   await clearLatestEncounter(otherUid, ownerUid);
 
-  // ③ owner側に保存
   await addDoc(collection(db, "encounters"), {
     ownerUid,
     otherUid,
@@ -73,10 +66,10 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     address,
     createdAt: serverTimestamp(),
     isLatest: true,
+    isUnread: true,
     snapshot: snapshotForOwner,
   });
 
-  // ④ other側にも保存
   await addDoc(collection(db, "encounters"), {
     ownerUid: otherUid,
     otherUid: ownerUid,
@@ -85,6 +78,7 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     address,
     createdAt: serverTimestamp(),
     isLatest: true,
+    isUnread: true,
     snapshot: snapshotForOther,
   });
 }
@@ -123,6 +117,20 @@ export async function fetchEncountersByOwner(ownerUid: string) {
   });
 
   return items;
+}
+
+export async function markEncountersAsRead(ownerUid: string) {
+  const q = query(
+    collection(db, "encounters"),
+    where("ownerUid", "==", ownerUid),
+    where("isUnread", "==", true)
+  );
+
+  const result = await getDocs(q);
+
+  for (const docSnap of result.docs) {
+    await updateDoc(docSnap.ref, { isUnread: false });
+  }
 }
 
 async function getCurrentPositionWithFallback(): Promise<{
