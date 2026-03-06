@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
 import QRCode from "qrcode";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
@@ -27,11 +26,9 @@ export default function MeisiPage() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // QR表示用
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [qrText, setQrText] = useState<string>("");
 
-  // QR拡大モーダル
   const [qrOpen, setQrOpen] = useState(false);
 
   const hasProfile = useMemo(
@@ -58,11 +55,8 @@ export default function MeisiPage() {
     }
   };
 
-  // QRの中身（最初はUIDだけが堅い）
   const buildQrPayload = (u: User) => {
     return `uid:${u.uid}`;
-    // 将来的にはこういう形もおすすめ
-    // return `https://<your-vercel-domain>/p/${u.uid}`;
   };
 
   const generateQr = async (u: User) => {
@@ -83,7 +77,6 @@ export default function MeisiPage() {
     }
   };
 
-  // ログイン監視 → Firestore読み込み → QR生成
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
@@ -106,7 +99,6 @@ export default function MeisiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 画面復帰時にも再読込（編集→戻るで最新化）
   useEffect(() => {
     const onFocus = () => {
       if (user) loadFromFirestore(user.uid);
@@ -127,7 +119,6 @@ export default function MeisiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // SNSリンク整形
   const snsHref = useMemo(() => {
     const s = profile.sns?.trim();
     if (!s) return "";
@@ -138,7 +129,6 @@ export default function MeisiPage() {
 
   const showLoading = !loadedAuth || loadingProfile;
 
-  // ESCでモーダル閉じる
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setQrOpen(false);
@@ -158,7 +148,7 @@ export default function MeisiPage() {
         overflow: "hidden",
       }}
     >
-      {/* 星背景レイヤー */}
+      {/* 固定の星背景：多め版 */}
       <div
         style={{
           position: "fixed",
@@ -182,6 +172,21 @@ export default function MeisiPage() {
           opacity: 0.9,
         }}
       />
+
+      {/* 流れ星レイヤー */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+          overflow: "hidden",
+        }}
+      >
+        <span className="shooting-star shooting-star-1" />
+        <span className="shooting-star shooting-star-2" />
+        <span className="shooting-star shooting-star-3" />
+      </div>
 
       {/* QR拡大モーダル */}
       {qrOpen && qrDataUrl && (
@@ -300,11 +305,25 @@ export default function MeisiPage() {
       </div>
 
       {showLoading ? (
-        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            marginTop: 16,
+            opacity: 0.9,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           読み込み中…
         </div>
       ) : !user ? (
-        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            marginTop: 16,
+            opacity: 0.9,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           ログインしていないため名刺を表示できません。
           <div style={{ marginTop: 12 }}>
             <button
@@ -328,7 +347,14 @@ export default function MeisiPage() {
           )}
         </div>
       ) : !hasProfile ? (
-        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            marginTop: 16,
+            opacity: 0.9,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           プロフィールが未設定です。編集画面で保存してください。
           <div style={{ marginTop: 12 }}>
             <button
@@ -354,7 +380,15 @@ export default function MeisiPage() {
       ) : (
         <>
           {errorMsg && (
-            <div style={{ marginTop: 12, fontSize: 13, opacity: 0.9, position: "relative", zIndex: 1 }}>
+            <div
+              style={{
+                marginTop: 12,
+                fontSize: 13,
+                opacity: 0.9,
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
               {errorMsg}
             </div>
           )}
@@ -377,7 +411,6 @@ export default function MeisiPage() {
               backdropFilter: "blur(4px)",
             }}
           >
-            {/* 右上QR（小） */}
             {qrDataUrl && (
               <button
                 type="button"
@@ -413,7 +446,6 @@ export default function MeisiPage() {
               </button>
             )}
 
-            {/* 上：プロフィール */}
             <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
               <div
                 style={{
@@ -440,7 +472,6 @@ export default function MeisiPage() {
                 )}
               </div>
 
-              {/* QRが右上にある分、テキスト領域が重ならないよう右側に余白 */}
               <div style={{ minWidth: 0, paddingRight: 110 }}>
                 <div style={{ fontWeight: 900, fontSize: 18 }}>
                   {profile.name}
@@ -466,7 +497,6 @@ export default function MeisiPage() {
               </div>
             </div>
 
-            {/* 活動履歴 */}
             {profile.history?.trim() && (
               <div
                 style={{
@@ -482,7 +512,6 @@ export default function MeisiPage() {
               </div>
             )}
 
-            {/* QRの説明（小さく） */}
             {qrDataUrl && (
               <div style={{ fontSize: 12, opacity: 0.7 }}>
                 右上のQRを相手に読み取ってもらって交換（タップで拡大できます）
@@ -505,6 +534,82 @@ export default function MeisiPage() {
           </div>
         </>
       )}
+
+      <style jsx>{`
+        .shooting-star {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 1);
+          box-shadow:
+            0 0 10px rgba(255, 255, 255, 1),
+            0 0 18px rgba(125, 211, 252, 0.9),
+            0 0 30px rgba(56, 189, 248, 0.45);
+          opacity: 0;
+        }
+
+        .shooting-star::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: 2px;
+          width: 140px;
+          height: 2px;
+          transform: translateY(-50%);
+          transform-origin: right center;
+          background: linear-gradient(
+            270deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(125, 211, 252, 0.55) 25%,
+            rgba(125, 211, 252, 0.18) 55%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          filter: blur(1px);
+          border-radius: 999px;
+        }
+
+        .shooting-star-1 {
+          top: 90px;
+          left: -140px;
+          animation: meteor 7s linear infinite;
+          animation-delay: 0s;
+        }
+
+        .shooting-star-2 {
+          top: 170px;
+          left: -240px;
+          animation: meteor 8.5s linear infinite;
+          animation-delay: 2.2s;
+        }
+
+        .shooting-star-3 {
+          top: 130px;
+          left: -320px;
+          animation: meteor 9.2s linear infinite;
+          animation-delay: 4.6s;
+        }
+
+        @keyframes meteor {
+          0% {
+            transform: translateX(0) translateY(0) rotate(25deg);
+            opacity: 0;
+          }
+          8% {
+            opacity: 0.95;
+          }
+          18% {
+            opacity: 1;
+          }
+          38% {
+            opacity: 0.9;
+          }
+          100% {
+            transform: translateX(1100px) translateY(480px) rotate(25deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
