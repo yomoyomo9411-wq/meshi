@@ -158,7 +158,7 @@ export default function CardsPage() {
           {cards.map((item) => (
             <button
               key={item.id}
-              onClick={() => router.push(`/cards/${item.otherUid}`)}
+              onClick={() => router.push(`/?focusOtherUid=${item.otherUid}`)}
               style={{
                 borderRadius: 18,
                 padding: 16,
