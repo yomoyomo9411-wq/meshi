@@ -32,9 +32,16 @@ export type EncounterDoc = {
 };
 
 export async function createEncounter(ownerUid: string, otherUid: string) {
+  // 交換した場所は共通
+  const { lat, lng } = await getCurrentPositionWithFallback();
+  const address = await reverseGeocode(lat, lng);
+
+  // お互いの最新プロフィールを取得
+  const ownerProfile = await fetchProfile(ownerUid);
   const otherProfile = await fetchProfile(otherUid);
 
-  const snapshot: EncounterSnapshot = {
+  // owner視点では「相手のプロフィール」を保存
+  const snapshotForOwner: EncounterSnapshot = {
     name: otherProfile?.name ?? "",
     affiliation: otherProfile?.affiliation ?? "",
     sns: otherProfile?.sns ?? "",
@@ -42,22 +49,22 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     photoURL: otherProfile?.photoURL ?? "",
   };
 
-  const { lat, lng } = await getCurrentPositionWithFallback();
-  const address = await reverseGeocode(lat, lng);
+  // other視点では「自分のプロフィール」を保存
+  const snapshotForOther: EncounterSnapshot = {
+    name: ownerProfile?.name ?? "",
+    affiliation: ownerProfile?.affiliation ?? "",
+    sns: ownerProfile?.sns ?? "",
+    history: ownerProfile?.history ?? "",
+    photoURL: ownerProfile?.photoURL ?? "",
+  };
 
-  const q = query(
-    collection(db, "encounters"),
-    where("ownerUid", "==", ownerUid)
-  );
-  const existing = await getDocs(q);
+  // ① owner側の過去最新を青にする
+  await clearLatestEncounter(ownerUid, otherUid);
 
-  for (const docSnap of existing.docs) {
-    const data = docSnap.data() as EncounterDoc;
-    if (data.otherUid === otherUid && data.isLatest === true) {
-      await updateDoc(docSnap.ref, { isLatest: false });
-    }
-  }
+  // ② other側の過去最新を青にする
+  await clearLatestEncounter(otherUid, ownerUid);
 
+  // ③ owner側に保存
   await addDoc(collection(db, "encounters"), {
     ownerUid,
     otherUid,
@@ -66,8 +73,35 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     address,
     createdAt: serverTimestamp(),
     isLatest: true,
-    snapshot,
+    snapshot: snapshotForOwner,
   });
+
+  // ④ other側にも保存
+  await addDoc(collection(db, "encounters"), {
+    ownerUid: otherUid,
+    otherUid: ownerUid,
+    lat,
+    lng,
+    address,
+    createdAt: serverTimestamp(),
+    isLatest: true,
+    snapshot: snapshotForOther,
+  });
+}
+
+async function clearLatestEncounter(ownerUid: string, otherUid: string) {
+  const q = query(
+    collection(db, "encounters"),
+    where("ownerUid", "==", ownerUid),
+    where("otherUid", "==", otherUid),
+    where("isLatest", "==", true)
+  );
+
+  const existing = await getDocs(q);
+
+  for (const docSnap of existing.docs) {
+    await updateDoc(docSnap.ref, { isLatest: false });
+  }
 }
 
 export async function fetchEncountersByOwner(ownerUid: string) {
