@@ -216,6 +216,24 @@ export default function MyPage() {
         }}
       />
 
+      {/* 左下の宇宙飛行士 */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/astronaut.png"
+        alt="astronaut"
+        className="floating-astronaut"
+        style={{
+          position: "fixed",
+          left: 30,
+          bottom: 16,
+          width: 200,
+          height: "auto",
+          zIndex: 0,
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      />
+
       {/* 保存トースト */}
       {savedMsg && (
         <div
@@ -488,6 +506,11 @@ export default function MyPage() {
           animation-delay: 4.6s;
         }
 
+        .floating-astronaut {
+          animation: floatAstronaut 4.2s ease-in-out infinite;
+          filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.35));
+        }
+
         @keyframes meteor {
           0% {
             transform: translateX(0) translateY(0) rotate(25deg);
@@ -505,6 +528,18 @@ export default function MyPage() {
           100% {
             transform: translateX(1100px) translateY(480px) rotate(25deg);
             opacity: 0;
+          }
+        }
+
+        @keyframes floatAstronaut {
+          0% {
+            transform: translateY(0px) rotate(-2deg);
+          }
+          50% {
+            transform: translateY(-14px) rotate(2deg);
+          }
+          100% {
+            transform: translateY(0px) rotate(-2deg);
           }
         }
       `}</style>
