@@ -155,7 +155,7 @@ export default function MeisiPage() {
         `,
       }}
     >
-      {/* 固定の星背景：多め版 */}
+      {/* 固定の星背景 */}
       <div
         style={{
           position: "fixed",
@@ -415,71 +415,50 @@ export default function MeisiPage() {
             </div>
           )}
 
-          {/* 名刺カード */}
+          {/* 名刺本体 */}
           <div
             style={{
-              marginTop: 16,
-              borderRadius: 18,
-              padding: 16,
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              boxShadow:
-                "0 0 25px rgba(56,189,248,0.6), 0 15px 40px rgba(0,0,0,0.6)",
-              transform: "translateY(-8px)",
+              marginTop: 18,
               display: "grid",
-              gap: 14,
+              placeItems: "center",
               position: "relative",
               zIndex: 1,
-              backdropFilter: "blur(6px)",
             }}
           >
-            {qrDataUrl && (
-              <button
-                type="button"
-                onClick={() => setQrOpen(true)}
+            <div
+              style={{
+                position: "relative",
+                width: "min(92vw, 420px)",
+                filter: "drop-shadow(0 12px 34px rgba(0,0,0,0.38))",
+              }}
+            >
+              {/* 背景画像：全面表示 */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/card-base.png"
+                alt="card-base"
                 style={{
-                  position: "absolute",
-                  top: 14,
-                  right: 14,
-                  width: 92,
-                  height: 92,
-                  borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  background: "rgba(255,255,255,0.06)",
-                  padding: 6,
-                  cursor: "pointer",
-                  display: "grid",
-                  placeItems: "center",
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                  borderRadius: 24,
                 }}
-                aria-label="QRコードを拡大表示"
-                title="タップで拡大"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrDataUrl}
-                  alt="my-qr"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: 10,
-                    background: "white",
-                  }}
-                />
-              </button>
-            )}
+              />
 
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              {/* 写真（月っぽい黄色い光付き） */}
               <div
                 style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: 16,
+                  position: "absolute",
+                  top: "13.2%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "23.8%",
+                  aspectRatio: "1 / 1",
+                  borderRadius: "999px",
                   overflow: "hidden",
-                  background: "rgba(255,255,255,0.10)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
+                  background: "#241672",
+                  boxShadow:
+                    "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)",
                 }}
               >
                 {profile.photoURL ? (
@@ -487,72 +466,162 @@ export default function MeisiPage() {
                   <img
                     src={profile.photoURL}
                     alt="profile"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
                   />
-                ) : (
-                  <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
-                )}
+                ) : null}
               </div>
 
-              <div style={{ minWidth: 0, paddingRight: 110 }}>
-                <div style={{ fontWeight: 900, fontSize: 18 }}>
-                  {profile.name}
-                </div>
-                <div style={{ opacity: 0.85, marginTop: 4 }}>
-                  {profile.affiliation || "（所属未入力）"}
-                </div>
-                {snsHref && (
+              {/* 名前 */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "31.8%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "78%",
+                  textAlign: "center",
+                  color: "#22196f",
+                  fontWeight: 900,
+                  fontSize: "clamp(26px, 5vw, 42px)",
+                  letterSpacing: "0.04em",
+                  lineHeight: 1.1,
+                }}
+              >
+                {profile.name || "名前未設定"}
+              </div>
+
+              {/* 所属 */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "47.6%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "72%",
+                  textAlign: "center",
+                  color: "#555",
+                  fontWeight: 600,
+                  fontSize: "clamp(13px, 2.2vw, 20px)",
+                  lineHeight: 1.35,
+                }}
+              >
+                {profile.affiliation || "所属未設定"}
+              </div>
+
+              {/* SNSリンク */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "58.5%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "76%",
+                  textAlign: "center",
+                  fontSize: "clamp(11px, 1.9vw, 16px)",
+                  lineHeight: 1.35,
+                  color: "#4b5563",
+                  wordBreak: "break-word",
+                }}
+              >
+                {snsHref ? (
                   <a
                     href={snsHref}
                     target="_blank"
                     rel="noreferrer"
                     style={{
-                      display: "inline-block",
-                      marginTop: 6,
-                      color: "#7dd3fc",
-                      fontWeight: 800,
+                      color: "#3b82f6",
+                      textDecoration: "none",
+                      fontWeight: 700,
                     }}
                   >
-                    SNSを見る
+                    {profile.sns}
                   </a>
-                )}
+                ) : profile.sns ? (
+                  <span>{profile.sns}</span>
+                ) : null}
               </div>
-            </div>
 
-            {profile.history?.trim() && (
+              {/* 経歴 */}
               <div
                 style={{
-                  padding: 12,
-                  borderRadius: 14,
-                  background: "rgba(0,0,0,0.20)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  position: "absolute",
+                  top: "66.5%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "76%",
+                  textAlign: "center",
+                  fontSize: "clamp(10px, 1.8vw, 15px)",
+                  lineHeight: 1.45,
+                  color: "#4b5563",
                   whiteSpace: "pre-wrap",
-                  lineHeight: 1.5,
+                  wordBreak: "break-word",
                 }}
               >
-                {profile.history}
+                {profile.history || ""}
               </div>
-            )}
 
-            {qrDataUrl && (
-              <div style={{ fontSize: 12, opacity: 0.7 }}>
-                右上のQRを相手に読み取ってもらって交換（タップで拡大できます）
-              </div>
-            )}
+              {/* QR */}
+              {qrDataUrl && (
+                <button
+                  type="button"
+                  onClick={() => setQrOpen(true)}
+                  style={{
+                    position: "absolute",
+                    right: "7%",
+                    bottom: "4.8%",
+                    width: "18.5%",
+                    aspectRatio: "1 / 1",
+                    border: "none",
+                    padding: 0,
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
+                  aria-label="QRコードを拡大表示"
+                  title="タップで拡大"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={qrDataUrl}
+                    alt="my-qr"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: 12,
+                      background: "white",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
+                    }}
+                  />
+                </button>
+              )}
+            </div>
 
-            <button
-              onClick={() => router.push("/me")}
+            <div
               style={{
-                padding: "12px 14px",
-                borderRadius: 14,
-                border: "none",
-                background: "rgba(255,255,255,0.12)",
-                color: "white",
-                fontWeight: 900,
+                marginTop: 14,
+                width: "min(92vw, 420px)",
+                display: "grid",
+                gap: 10,
               }}
             >
-              編集（/me）へ
-            </button>
+              <button
+                onClick={() => router.push("/me")}
+                style={{
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  border: "none",
+                  background: "rgba(255,255,255,0.12)",
+                  color: "white",
+                  fontWeight: 900,
+                }}
+              >
+                編集（/me）へ
+              </button>
+            </div>
           </div>
         </>
       )}
