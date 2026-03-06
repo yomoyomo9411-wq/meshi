@@ -152,7 +152,7 @@ export default function MeisiPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0b1220",
+        background: "#020617",
         color: "white",
         padding: 16,
       }}
@@ -172,6 +172,8 @@ export default function MeisiPage() {
             padding: 16,
           }}
         >
+        
+        
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -331,6 +333,8 @@ export default function MeisiPage() {
               padding: 16,
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.10)",
+              boxShadow: "0 0 25px rgba(56,189,248,0.6), 0 15px 40px rgba(0,0,0,0.6)",
+              transform: "translateY(-8px)",
               display: "grid",
               gap: 14,
               position: "relative", // ✅ 右上配置のため
