@@ -34,10 +34,10 @@ export default function Map() {
       zoom={13}
       style={{ height: "100vh", width: "100%" }}
     >
-      <TileLayer
-        attribution="&copy; OpenStreetMap contributors"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <TileLayer 
+  attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
+  url="https://{s}.tile.jawg.io/jawg-dark/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP"
+/>
       <Marker position={position}>
         <Popup>東京駅</Popup>
       </Marker>

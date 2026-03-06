@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
@@ -6,35 +7,38 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import type { LatLngExpression } from "leaflet";
 
-// 別ファイルから星を読み込む
+// 星のデザインをインポート
 import { blueShinyStarIcon, yellowShinyStarIcon } from "./MapIcon";
 
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "./lib/firebase";
 import { fetchEncountersByOwner } from "./lib/encounterClient";
 
-const TOYAMA_PREF_UNIV: [number, number] = [36.706, 137.213];
+// 初期表示用の中心点（地図を出すために必要ですが、ピンはここには出しません）
+const INITIAL_CENTER: [number, number] = [36.706, 137.213];
 
 function Recenter({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
-  useEffect(() => { map.setView(center, zoom, { animate: true }); }, [center, zoom, map]);
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [center, zoom, map]);
   return null;
 }
 
 export default function MapComponent() {
   const router = useRouter();
-  
-  // --- ★SSRエラー防止用のマウントチェック ---
   const [mounted, setMounted] = useState(false);
-  
   const [user, setUser] = useState<User | null>(null);
   const [encounters, setEncounters] = useState<any[]>([]);
-  const [center, setCenter] = useState<[number, number]>(TOYAMA_PREF_UNIV);
-  const [markerPos, setMarkerPos] = useState<[number, number]>(TOYAMA_PREF_UNIV);
+  
+  // 位置情報の状態管理
+  const [center, setCenter] = useState<[number, number]>(INITIAL_CENTER);
+  const [markerPos, setMarkerPos] = useState<[number, number] | null>(null); // 最初はnull（位置不明）
   const [status, setStatus] = useState("現在地を取得中…");
+  const [isLocationError, setIsLocationError] = useState(false); // エラーフラグ
+  
   const zoom = 15;
 
-  // ブラウザにマウントされたら実行
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -44,69 +48,72 @@ export default function MapComponent() {
     if (!mounted) return;
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      if (!u) { setEncounters([]); return; }
+      if (!u) {
+        setEncounters([]);
+        return;
+      }
       try {
         const list = await fetchEncountersByOwner(u.uid);
         setEncounters(list);
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     });
     return () => unsub();
   }, [mounted]);
 
-  // 現在地取得
-  useEffect(() => {
-    if (!mounted) return;
+  // 現在地の取得ロジック（厳格版）
+  const handleGeolocation = () => {
     if (!("geolocation" in navigator)) {
       setStatus("この端末では位置情報が使えません。");
+      setIsLocationError(true);
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-        setCenter(latlng);
-        setMarkerPos(latlng);
-        setStatus("現在地を表示中");
-      },
-      () => {
-        setStatus("位置情報が取得できませんでした。");
-        setCenter(TOYAMA_PREF_UNIV);
-        setMarkerPos(TOYAMA_PREF_UNIV);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  }, [mounted]);
 
-  const refetchLocation = () => {
-    setStatus("現在地を再取得中…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setCenter(latlng);
-        setMarkerPos(latlng);
+        setMarkerPos(latlng); // 成功した時だけ自分の位置をセット
         setStatus("現在地を表示中");
+        setIsLocationError(false);
       },
-      () => setStatus("位置情報が取得できませんでした。"),
+      (err) => {
+        console.error(err);
+        setStatus("位置情報が取得できませんでした。"); // 要望のメッセージ
+        setIsLocationError(true); // エラー状態にする
+        setMarkerPos(null); // 自分のピンを消去（デフォルト位置に出さない）
+      },
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
 
+  useEffect(() => {
+    if (mounted) handleGeolocation();
+  }, [mounted]);
+
   const safeCenter = useMemo(() => center, [center]);
 
-  // --- ★準備ができるまで何も表示しない（エラー回避の鉄則） ---
   if (!mounted) return null;
 
   return (
-    <div style={{ height: "100vh", width: "100%", position: "relative" }}>
+    <div style={{ height: "100vh", width: "100%", position: "relative", background: "#111827" }}>
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%", zIndex: 0 }}>
-        <TileLayer url="https://{s}.tile.jawg.io/jawg-terrain/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP" />
+        <TileLayer 
+          attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
+          url="https://{s}.tile.jawg.io/jawg-dark/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP" 
+        />
+        
         <Recenter center={safeCenter} zoom={zoom} />
 
-        {/* 自分の現在地：キラキラ青い星 */}
-        <Marker position={markerPos} icon={blueShinyStarIcon as L.DivIcon}>
-          <Popup><div style={{ textAlign: "center", fontWeight: 700 }}>あなた</div></Popup>
-        </Marker>
+        {/* 1. 自分の現在地：位置が取得できた時だけ表示 */}
+        {markerPos && (
+          <Marker position={markerPos} icon={blueShinyStarIcon as L.DivIcon}>
+            <Popup><div style={{ textAlign: "center", fontWeight: 700 }}>あなた</div></Popup>
+          </Marker>
+        )}
 
-        {/* 他の人：黄色（最新）or 青（過去） */}
+        {/* 2. 他の人：出会った人の星 */}
         {encounters.map((item) => (
           <Marker 
             key={item.id} 
@@ -124,21 +131,33 @@ export default function MapComponent() {
         ))}
       </MapContainer>
 
-      {/* ステータスバー */}
-      <div style={{ position: "fixed", top: 10, left: 10, right: 10, zIndex: 2000, padding: "10px 12px", background: "rgba(0,0,0,0.6)", color: "white", borderRadius: 12, fontSize: 14, textAlign: "center" }}>
+      {/* 画面上部：ステータスバー（エラー時は赤くする） */}
+      <div style={{ 
+        position: "fixed", top: 10, left: 10, right: 10, zIndex: 2000, 
+        padding: "10px 12px", 
+        background: isLocationError ? "rgba(220, 38, 38, 0.9)" : "rgba(0,0,0,0.7)", 
+        color: "white", borderRadius: 12, fontSize: 13, textAlign: "center", 
+        backdropFilter: "blur(4px)",
+        fontWeight: isLocationError ? "bold" : "normal",
+        transition: "all 0.3s"
+      }}>
         {status}
       </div>
 
-      
-      {/* 現在地へボタン */}
-      <button onClick={refetchLocation} style={{ position: "fixed", bottom: 88, right: 16, zIndex: 2000, padding: "12px 14px", borderRadius: 999, border: "none", background: "#2563eb", color: "white", fontWeight: 700, boxShadow: "0 8px 24px rgba(0,0,0,0.25)" }}>現在地へ</button>
+      {/* 画面右下：現在地へボタン（再試行ボタンを兼ねる） */}
+      <button 
+        onClick={handleGeolocation} 
+        style={{ position: "fixed", bottom: 90, right: 16, zIndex: 2000, padding: "12px 18px", borderRadius: 999, border: "none", background: isLocationError ? "#dc2626" : "#2563eb", color: "white", fontWeight: 700, boxShadow: "0 4px 15px rgba(0,0,0,0.4)", cursor: "pointer" }}
+      >
+        {isLocationError ? "再試行" : "現在地へ"}
+      </button>
 
-      {/* 下部4ボタン */}
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 2000, padding: 12, background: "rgba(0,0,0,0.55)", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-        <button onClick={() => router.push("/scan")} style={{ padding: "12px 4px", borderRadius: 10, border: "none", background: "#22c55e", color: "#111827", fontWeight: 800, fontSize: "12px" }}>QRスキャン</button>
-        <button onClick={() => router.push("/me")} style={{ padding: "12px 4px", borderRadius: 10, border: "none", background: "white", color: "#111827", fontWeight: 800, fontSize: "12px" }}>編集</button>
-        <button onClick={() => router.push("/meisi")} style={{ padding: "12px 4px", borderRadius: 10, border: "none", background: "#f59e0b", color: "#111827", fontWeight: 800, fontSize: "12px" }}>My名刺</button>
-        <button onClick={() => router.push("/cards")} style={{ padding: "12px 4px", borderRadius: 10, border: "none", background: "#60a5fa", color: "#111827", fontWeight: 800, fontSize: "12px" }}>一覧</button>
+      {/* 画面下部：メインメニュー（4ボタン） */}
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 2000, padding: 12, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+        <button onClick={() => router.push("/scan")} style={{ padding: "14px 4px", borderRadius: 12, border: "none", background: "#22c55e", color: "white", fontWeight: 800, fontSize: "12px" }}>QRスキャン</button>
+        <button onClick={() => router.push("/me")} style={{ padding: "14px 4px", borderRadius: 12, border: "none", background: "white", color: "#111827", fontWeight: 800, fontSize: "12px" }}>編集</button>
+        <button onClick={() => router.push("/meisi")} style={{ padding: "14px 4px", borderRadius: 12, border: "none", background: "#f59e0b", color: "#111827", fontWeight: 800, fontSize: "12px" }}>My名刺</button>
+        <button onClick={() => router.push("/cards")} style={{ padding: "14px 4px", borderRadius: 12, border: "none", background: "#60a5fa", color: "#111827", fontWeight: 800, fontSize: "12px" }}>一覧</button>
       </div>
     </div>
   );
