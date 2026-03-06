@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
 import QRCode from "qrcode";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
@@ -27,11 +26,9 @@ export default function MeisiPage() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // QR表示用
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [qrText, setQrText] = useState<string>("");
 
-  // ✅ QR拡大モーダル
   const [qrOpen, setQrOpen] = useState(false);
 
   const hasProfile = useMemo(
@@ -58,13 +55,8 @@ export default function MeisiPage() {
     }
   };
 
-  // QRの中身（最初はUIDだけが堅い）
   const buildQrPayload = (u: User) => {
-    // 例: uid:xxxxxxxx
     return `uid:${u.uid}`;
-
-    // URLで開ける形式にしたいなら（将来のおすすめ）
-    // return `https://<your-vercel-domain>/p/${u.uid}`;
   };
 
   const generateQr = async (u: User) => {
@@ -85,7 +77,6 @@ export default function MeisiPage() {
     }
   };
 
-  // ① ログイン監視 → Firestore読み込み → QR生成
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
@@ -108,14 +99,14 @@ export default function MeisiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ② 画面復帰時にも再読込（編集→戻るで最新化）
   useEffect(() => {
     const onFocus = () => {
       if (user) loadFromFirestore(user.uid);
     };
     const onVisibility = () => {
-      if (document.visibilityState === "visible" && user)
+      if (document.visibilityState === "visible" && user) {
         loadFromFirestore(user.uid);
+      }
     };
 
     window.addEventListener("focus", onFocus);
@@ -128,7 +119,6 @@ export default function MeisiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // SNSリンク整形（任意）
   const snsHref = useMemo(() => {
     const s = profile.sns?.trim();
     if (!s) return "";
@@ -139,7 +129,6 @@ export default function MeisiPage() {
 
   const showLoading = !loadedAuth || loadingProfile;
 
-  // ESCでモーダル閉じる（PC便利）
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setQrOpen(false);
@@ -152,12 +141,76 @@ export default function MeisiPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0b1220",
         color: "white",
         padding: 16,
+        position: "relative",
+        overflow: "hidden",
+        backgroundColor: "#020617",
+        backgroundImage: `
+          radial-gradient(circle at 12% 88%, rgba(56, 189, 248, 0.42) 0%, rgba(56, 189, 248, 0.18) 18%, rgba(56, 189, 248, 0.00) 42%),
+          radial-gradient(circle at 68% 30%, rgba(168, 85, 247, 0.40) 0%, rgba(168, 85, 247, 0.16) 20%, rgba(168, 85, 247, 0.00) 46%),
+          radial-gradient(circle at 82% 12%, rgba(59, 130, 246, 0.24) 0%, rgba(59, 130, 246, 0.10) 16%, rgba(59, 130, 246, 0.00) 36%),
+          radial-gradient(circle at 38% 56%, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 14%, rgba(255, 255, 255, 0.00) 32%),
+          linear-gradient(180deg, #071224 0%, #040b18 48%, #020617 100%)
+        `,
       }}
     >
-      {/* ✅ QR拡大モーダル */}
+      {/* 固定の星背景 */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+          backgroundImage: `
+            radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.95), transparent),
+            radial-gradient(2px 2px at 120px 80px, rgba(255,255,255,0.85), transparent),
+            radial-gradient(1.5px 1.5px at 220px 160px, rgba(255,255,255,0.9), transparent),
+            radial-gradient(2px 2px at 320px 60px, rgba(255,255,255,0.8), transparent),
+            radial-gradient(1.5px 1.5px at 420px 140px, rgba(255,255,255,0.9), transparent),
+            radial-gradient(2px 2px at 520px 40px, rgba(255,255,255,0.95), transparent),
+            radial-gradient(1.5px 1.5px at 620px 180px, rgba(255,255,255,0.8), transparent),
+            radial-gradient(2px 2px at 720px 100px, rgba(255,255,255,0.9), transparent),
+            radial-gradient(1.5px 1.5px at 820px 50px, rgba(255,255,255,0.85), transparent),
+            radial-gradient(2px 2px at 920px 170px, rgba(255,255,255,0.95), transparent)
+          `,
+          backgroundRepeat: "repeat",
+          backgroundSize: "1000px 220px",
+          opacity: 0.9,
+        }}
+      />
+
+      {/* 流れ星レイヤー */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+          overflow: "hidden",
+        }}
+      >
+        <span className="shooting-star shooting-star-1" />
+        <span className="shooting-star shooting-star-2" />
+        <span className="shooting-star shooting-star-3" />
+      </div>
+
+      {/* うっすら霧っぽい光 */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+          background: `
+            radial-gradient(circle at 50% 18%, rgba(255,255,255,0.04), rgba(255,255,255,0.00) 28%),
+            radial-gradient(circle at 20% 78%, rgba(255,255,255,0.03), rgba(255,255,255,0.00) 24%)
+          `,
+          mixBlendMode: "screen",
+        }}
+      />
+
+      {/* QR拡大モーダル */}
       {qrOpen && qrDataUrl && (
         <div
           onClick={() => setQrOpen(false)}
@@ -230,7 +283,15 @@ export default function MeisiPage() {
       )}
 
       {/* ヘッダー */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
         <button
           onClick={() => router.push("/")}
           style={{
@@ -266,9 +327,25 @@ export default function MeisiPage() {
       </div>
 
       {showLoading ? (
-        <div style={{ marginTop: 16, opacity: 0.9 }}>読み込み中…</div>
+        <div
+          style={{
+            marginTop: 16,
+            opacity: 0.9,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
+          読み込み中…
+        </div>
       ) : !user ? (
-        <div style={{ marginTop: 16, opacity: 0.9 }}>
+        <div
+          style={{
+            marginTop: 16,
+            opacity: 0.9,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           ログインしていないため名刺を表示できません。
           <div style={{ marginTop: 12 }}>
             <button
@@ -292,7 +369,14 @@ export default function MeisiPage() {
           )}
         </div>
       ) : !hasProfile ? (
-        <div style={{ marginTop: 16, opacity: 0.9 }}>
+        <div
+          style={{
+            marginTop: 16,
+            opacity: 0.9,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           プロフィールが未設定です。編集画面で保存してください。
           <div style={{ marginTop: 12 }}>
             <button
@@ -318,75 +402,62 @@ export default function MeisiPage() {
       ) : (
         <>
           {errorMsg && (
-            <div style={{ marginTop: 12, fontSize: 13, opacity: 0.9 }}>
+            <div
+              style={{
+                marginTop: 12,
+                fontSize: 13,
+                opacity: 0.9,
+                position: "relative",
+                zIndex: 1,
+              }}
+            >
               {errorMsg}
             </div>
           )}
 
-          {/* 名刺カード */}
+          {/* 名刺本体 */}
           <div
             style={{
-              marginTop: 16,
-              borderRadius: 18,
-              padding: 16,
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              marginTop: 18,
               display: "grid",
-              gap: 14,
-              position: "relative", // ✅ 右上配置のため
+              placeItems: "center",
+              position: "relative",
+              zIndex: 1,
             }}
           >
-            {/* ✅ 右上QR（小） */}
-            {qrDataUrl && (
-              <button
-                type="button"
-                onClick={() => setQrOpen(true)}
+            <div
+              style={{
+                position: "relative",
+                width: "min(92vw, 420px)",
+                filter: "drop-shadow(0 12px 34px rgba(0,0,0,0.38))",
+              }}
+            >
+              {/* 背景画像：全面表示 */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/card-base.png"
+                alt="card-base"
                 style={{
-                  position: "absolute",
-                  top: 14,
-                  right: 14,
-                  width: 92,
-                  height: 92,
-                  borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  background: "rgba(255,255,255,0.06)",
-                  padding: 6,
-                  cursor: "pointer",
-                  display: "grid",
-                  placeItems: "center",
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                  borderRadius: 24,
                 }}
-                aria-label="QRコードを拡大表示"
-                title="タップで拡大"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrDataUrl}
-                  alt="my-qr"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    borderRadius: 10,
-                    background: "white",
-                  }}
-                />
-              </button>
-            )}
-            
 
-
-            {/* 上：プロフィール */}
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              {/* 写真（月っぽい黄色い光付き） */}
               <div
                 style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: 16,
+                  position: "absolute",
+                  top: "13.2%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "23.8%",
+                  aspectRatio: "1 / 1",
+                  borderRadius: "999px",
                   overflow: "hidden",
-                  background: "rgba(255,255,255,0.10)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
+                  background: "#241672",
+                  boxShadow:
+                    "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)",
                 }}
               >
                 {profile.photoURL ? (
@@ -394,78 +465,241 @@ export default function MeisiPage() {
                   <img
                     src={profile.photoURL}
                     alt="profile"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
                   />
-                ) : (
-                  <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
-                )}
+                ) : null}
               </div>
 
-              {/* QRが右上にある分、テキスト領域が重ならないよう右側に余白 */}
-              <div style={{ minWidth: 0, paddingRight: 110 }}>
-                <div style={{ fontWeight: 900, fontSize: 18 }}>
-                  {profile.name}
-                </div>
-                <div style={{ opacity: 0.85, marginTop: 4 }}>
-                  {profile.affiliation || "（所属未入力）"}
-                </div>
-                {snsHref && (
+              {/* 名前 */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "31.8%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "78%",
+                  textAlign: "center",
+                  color: "#22196f",
+                  fontWeight: 900,
+                  fontSize: "clamp(26px, 5vw, 42px)",
+                  letterSpacing: "0.04em",
+                  lineHeight: 1.1,
+                }}
+              >
+                {profile.name || "名前未設定"}
+              </div>
+
+              {/* 所属 */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "40%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "72%",
+                  textAlign: "center",
+                  color: "#1f174d",
+                  fontWeight: 600,
+                  fontSize: "clamp(10px, 2.0vw, 17px)",
+                  lineHeight: 1.35,
+                }}
+              >
+                {profile.affiliation || "所属未設定"}
+              </div>
+
+              {/* SNSリンク */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "58.5%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "76%",
+                  textAlign: "center",
+                  fontSize: "clamp(11px, 1.9vw, 16px)",
+                  lineHeight: 1.35,
+                  color: "#4b5563",
+                  wordBreak: "break-word",
+                }}
+              >
+                {snsHref ? (
                   <a
                     href={snsHref}
                     target="_blank"
                     rel="noreferrer"
                     style={{
-                      display: "inline-block",
-                      marginTop: 6,
-                      color: "#60a5fa",
-                      fontWeight: 800,
+                      color: "#3b82f6",
+                      textDecoration: "none",
+                      fontWeight: 700,
                     }}
                   >
-                    SNSを見る
+                    {profile.sns}
                   </a>
-                )}
+                ) : profile.sns ? (
+                  <span>{profile.sns}</span>
+                ) : null}
               </div>
-            </div>
 
-            {/* 活動履歴 */}
-            {profile.history?.trim() && (
+              {/* 経歴 */}
               <div
                 style={{
-                  padding: 12,
-                  borderRadius: 14,
-                  background: "rgba(0,0,0,0.25)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  position: "absolute",
+                  top: "66.5%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "76%",
+                  textAlign: "center",
+                  fontSize: "clamp(10px, 1.8vw, 15px)",
+                  lineHeight: 1.45,
+                  color: "#4b5563",
                   whiteSpace: "pre-wrap",
-                  lineHeight: 1.5,
+                  wordBreak: "break-word",
                 }}
               >
-                {profile.history}
+                {profile.history || ""}
               </div>
-            )}
 
-            {/* QRの説明（小さく） */}
-            {qrDataUrl && (
-              <div style={{ fontSize: 12, opacity: 0.7 }}>
-                右上のQRを相手に読み取ってもらって交換（タップで拡大できます）
-              </div>
-            )}
+              {/* QR */}
+              {qrDataUrl && (
+                <button
+                  type="button"
+                  onClick={() => setQrOpen(true)}
+                  style={{
+                    position: "absolute",
+                    right: "7%",
+                    bottom: "4.8%",
+                    width: "18.5%",
+                    aspectRatio: "1 / 1",
+                    border: "none",
+                    padding: 0,
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
+                  aria-label="QRコードを拡大表示"
+                  title="タップで拡大"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={qrDataUrl}
+                    alt="my-qr"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: 12,
+                      background: "white",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.22)",
+                    }}
+                  />
+                </button>
+              )}
+            </div>
 
-            <button
-              onClick={() => router.push("/me")}
+            <div
               style={{
-                padding: "12px 14px",
-                borderRadius: 14,
-                border: "none",
-                background: "rgba(255,255,255,0.12)",
-                color: "white",
-                fontWeight: 900,
+                marginTop: 14,
+                width: "min(92vw, 420px)",
+                display: "grid",
+                gap: 10,
               }}
             >
-              編集（/me）へ
-            </button>
+              <button
+                onClick={() => router.push("/me")}
+                style={{
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  border: "none",
+                  background: "rgba(255,255,255,0.12)",
+                  color: "white",
+                  fontWeight: 900,
+                }}
+              >
+                編集（/me）へ
+              </button>
+            </div>
           </div>
         </>
       )}
+
+      <style jsx>{`
+        .shooting-star {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 1);
+          box-shadow:
+            0 0 10px rgba(255, 255, 255, 1),
+            0 0 18px rgba(125, 211, 252, 0.9),
+            0 0 30px rgba(56, 189, 248, 0.45);
+          opacity: 0;
+        }
+
+        .shooting-star::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: 2px;
+          width: 140px;
+          height: 2px;
+          transform: translateY(-50%);
+          transform-origin: right center;
+          background: linear-gradient(
+            270deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(125, 211, 252, 0.55) 25%,
+            rgba(125, 211, 252, 0.18) 55%,
+            rgba(255, 255, 255, 0) 100%
+          );
+          filter: blur(1px);
+          border-radius: 999px;
+        }
+
+        .shooting-star-1 {
+          top: 90px;
+          left: -140px;
+          animation: meteor 7s linear infinite;
+          animation-delay: 0s;
+        }
+
+        .shooting-star-2 {
+          top: 170px;
+          left: -240px;
+          animation: meteor 8.5s linear infinite;
+          animation-delay: 2.2s;
+        }
+
+        .shooting-star-3 {
+          top: 130px;
+          left: -320px;
+          animation: meteor 9.2s linear infinite;
+          animation-delay: 4.6s;
+        }
+
+        @keyframes meteor {
+          0% {
+            transform: translateX(0) translateY(0) rotate(25deg);
+            opacity: 0;
+          }
+          8% {
+            opacity: 0.95;
+          }
+          18% {
+            opacity: 1;
+          }
+          38% {
+            opacity: 0.9;
+          }
+          100% {
+            transform: translateX(1100px) translateY(480px) rotate(25deg);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
