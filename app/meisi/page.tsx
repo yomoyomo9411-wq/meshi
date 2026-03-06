@@ -31,7 +31,7 @@ export default function MeisiPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [qrText, setQrText] = useState<string>("");
 
-  // ✅ QR拡大モーダル
+  // QR拡大モーダル
   const [qrOpen, setQrOpen] = useState(false);
 
   const hasProfile = useMemo(
@@ -60,10 +60,8 @@ export default function MeisiPage() {
 
   // QRの中身（最初はUIDだけが堅い）
   const buildQrPayload = (u: User) => {
-    // 例: uid:xxxxxxxx
     return `uid:${u.uid}`;
-
-    // URLで開ける形式にしたいなら（将来のおすすめ）
+    // 将来的にはこういう形もおすすめ
     // return `https://<your-vercel-domain>/p/${u.uid}`;
   };
 
@@ -85,7 +83,7 @@ export default function MeisiPage() {
     }
   };
 
-  // ① ログイン監視 → Firestore読み込み → QR生成
+  // ログイン監視 → Firestore読み込み → QR生成
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
@@ -108,14 +106,15 @@ export default function MeisiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ② 画面復帰時にも再読込（編集→戻るで最新化）
+  // 画面復帰時にも再読込（編集→戻るで最新化）
   useEffect(() => {
     const onFocus = () => {
       if (user) loadFromFirestore(user.uid);
     };
     const onVisibility = () => {
-      if (document.visibilityState === "visible" && user)
+      if (document.visibilityState === "visible" && user) {
         loadFromFirestore(user.uid);
+      }
     };
 
     window.addEventListener("focus", onFocus);
@@ -128,7 +127,7 @@ export default function MeisiPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // SNSリンク整形（任意）
+  // SNSリンク整形
   const snsHref = useMemo(() => {
     const s = profile.sns?.trim();
     if (!s) return "";
@@ -139,7 +138,7 @@ export default function MeisiPage() {
 
   const showLoading = !loadedAuth || loadingProfile;
 
-  // ESCでモーダル閉じる（PC便利）
+  // ESCでモーダル閉じる
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setQrOpen(false);
@@ -155,9 +154,36 @@ export default function MeisiPage() {
         background: "#020617",
         color: "white",
         padding: 16,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* ✅ QR拡大モーダル */}
+      {/* 星背景レイヤー */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+          backgroundImage: `
+            radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.95), transparent),
+            radial-gradient(2px 2px at 120px 80px, rgba(255,255,255,0.85), transparent),
+            radial-gradient(1.5px 1.5px at 220px 160px, rgba(255,255,255,0.9), transparent),
+            radial-gradient(2px 2px at 320px 60px, rgba(255,255,255,0.8), transparent),
+            radial-gradient(1.5px 1.5px at 420px 140px, rgba(255,255,255,0.9), transparent),
+            radial-gradient(2px 2px at 520px 40px, rgba(255,255,255,0.95), transparent),
+            radial-gradient(1.5px 1.5px at 620px 180px, rgba(255,255,255,0.8), transparent),
+            radial-gradient(2px 2px at 720px 100px, rgba(255,255,255,0.9), transparent),
+            radial-gradient(1.5px 1.5px at 820px 50px, rgba(255,255,255,0.85), transparent),
+            radial-gradient(2px 2px at 920px 170px, rgba(255,255,255,0.95), transparent)
+          `,
+          backgroundRepeat: "repeat",
+          backgroundSize: "1000px 220px",
+          opacity: 0.9,
+        }}
+      />
+
+      {/* QR拡大モーダル */}
       {qrOpen && qrDataUrl && (
         <div
           onClick={() => setQrOpen(false)}
@@ -172,8 +198,6 @@ export default function MeisiPage() {
             padding: 16,
           }}
         >
-        
-        
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -232,7 +256,15 @@ export default function MeisiPage() {
       )}
 
       {/* ヘッダー */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
         <button
           onClick={() => router.push("/")}
           style={{
@@ -268,9 +300,11 @@ export default function MeisiPage() {
       </div>
 
       {showLoading ? (
-        <div style={{ marginTop: 16, opacity: 0.9 }}>読み込み中…</div>
+        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
+          読み込み中…
+        </div>
       ) : !user ? (
-        <div style={{ marginTop: 16, opacity: 0.9 }}>
+        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
           ログインしていないため名刺を表示できません。
           <div style={{ marginTop: 12 }}>
             <button
@@ -294,7 +328,7 @@ export default function MeisiPage() {
           )}
         </div>
       ) : !hasProfile ? (
-        <div style={{ marginTop: 16, opacity: 0.9 }}>
+        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
           プロフィールが未設定です。編集画面で保存してください。
           <div style={{ marginTop: 12 }}>
             <button
@@ -320,7 +354,7 @@ export default function MeisiPage() {
       ) : (
         <>
           {errorMsg && (
-            <div style={{ marginTop: 12, fontSize: 13, opacity: 0.9 }}>
+            <div style={{ marginTop: 12, fontSize: 13, opacity: 0.9, position: "relative", zIndex: 1 }}>
               {errorMsg}
             </div>
           )}
@@ -333,14 +367,17 @@ export default function MeisiPage() {
               padding: 16,
               background: "rgba(255,255,255,0.08)",
               border: "1px solid rgba(255,255,255,0.10)",
-              boxShadow: "0 0 25px rgba(56,189,248,0.6), 0 15px 40px rgba(0,0,0,0.6)",
+              boxShadow:
+                "0 0 25px rgba(56,189,248,0.6), 0 15px 40px rgba(0,0,0,0.6)",
               transform: "translateY(-8px)",
               display: "grid",
               gap: 14,
-              position: "relative", // ✅ 右上配置のため
+              position: "relative",
+              zIndex: 1,
+              backdropFilter: "blur(4px)",
             }}
           >
-            {/* ✅ 右上QR（小） */}
+            {/* 右上QR（小） */}
             {qrDataUrl && (
               <button
                 type="button"
