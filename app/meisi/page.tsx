@@ -96,16 +96,16 @@ export default function MeisiPage() {
     });
 
     return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     const onFocus = () => {
-      if (user) loadFromFirestore(user.uid);
+      if (user) void loadFromFirestore(user.uid);
     };
+
     const onVisibility = () => {
       if (document.visibilityState === "visible" && user) {
-        loadFromFirestore(user.uid);
+        void loadFromFirestore(user.uid);
       }
     };
 
@@ -116,7 +116,6 @@ export default function MeisiPage() {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const snsHref = useMemo(() => {
@@ -155,7 +154,6 @@ export default function MeisiPage() {
         `,
       }}
     >
-      {/* 固定の星背景 */}
       <div
         style={{
           position: "fixed",
@@ -180,7 +178,6 @@ export default function MeisiPage() {
         }}
       />
 
-      {/* 流れ星レイヤー */}
       <div
         style={{
           position: "fixed",
@@ -195,7 +192,6 @@ export default function MeisiPage() {
         <span className="shooting-star shooting-star-3" />
       </div>
 
-      {/* うっすら霧っぽい光 */}
       <div
         style={{
           position: "fixed",
@@ -210,7 +206,6 @@ export default function MeisiPage() {
         }}
       />
 
-      {/* QR拡大モーダル */}
       {qrOpen && qrDataUrl && (
         <div
           onClick={() => setQrOpen(false)}
@@ -265,6 +260,7 @@ export default function MeisiPage() {
             </div>
 
             <button
+              type="button"
               onClick={() => setQrOpen(false)}
               style={{
                 width: "100%",
@@ -282,7 +278,6 @@ export default function MeisiPage() {
         </div>
       )}
 
-      {/* ヘッダー */}
       <div
         style={{
           display: "flex",
@@ -293,6 +288,7 @@ export default function MeisiPage() {
         }}
       >
         <button
+          type="button"
           onClick={() => router.push("/")}
           style={{
             padding: "10px 12px",
@@ -309,7 +305,8 @@ export default function MeisiPage() {
         <div style={{ fontSize: 18, fontWeight: 900 }}>名刺</div>
 
         <button
-          onClick={() => user && loadFromFirestore(user.uid)}
+          type="button"
+          onClick={() => user && void loadFromFirestore(user.uid)}
           disabled={!user}
           style={{
             marginLeft: "auto",
@@ -349,6 +346,7 @@ export default function MeisiPage() {
           ログインしていないため名刺を表示できません。
           <div style={{ marginTop: 12 }}>
             <button
+              type="button"
               onClick={() => router.push("/me")}
               style={{
                 padding: "12px 14px",
@@ -380,6 +378,7 @@ export default function MeisiPage() {
           プロフィールが未設定です。編集画面で保存してください。
           <div style={{ marginTop: 12 }}>
             <button
+              type="button"
               onClick={() => router.push("/me")}
               style={{
                 padding: "12px 14px",
@@ -415,7 +414,6 @@ export default function MeisiPage() {
             </div>
           )}
 
-          {/* 名刺本体 */}
           <div
             style={{
               marginTop: 18,
@@ -432,7 +430,6 @@ export default function MeisiPage() {
                 filter: "drop-shadow(0 12px 34px rgba(0,0,0,0.38))",
               }}
             >
-              {/* 背景画像：全面表示 */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/card-base.png"
@@ -444,7 +441,6 @@ export default function MeisiPage() {
                   borderRadius: 24,
                 }}
 
-              {/* 写真（月っぽい黄色い光付き） */}
               <div
                 style={{
                   position: "absolute",
@@ -474,7 +470,6 @@ export default function MeisiPage() {
                 ) : null}
               </div>
 
-              {/* 名前 */}
               <div
                 style={{
                   position: "absolute",
@@ -493,7 +488,6 @@ export default function MeisiPage() {
                 {profile.name || "名前未設定"}
               </div>
 
-              {/* 所属 */}
               <div
                 style={{
                   position: "absolute",
@@ -504,14 +498,13 @@ export default function MeisiPage() {
                   textAlign: "center",
                   color: "#1f174d",
                   fontWeight: 600,
-                  fontSize: "clamp(10px, 2.0vw, 17px)",
+                  fontSize: "clamp(10px, 2vw, 17px)",
                   lineHeight: 1.35,
                 }}
               >
                 {profile.affiliation || "所属未設定"}
               </div>
 
-              {/* SNSリンク */}
               <div
                 style={{
                   position: "absolute",
@@ -544,7 +537,6 @@ export default function MeisiPage() {
                 ) : null}
               </div>
 
-              {/* 経歴 */}
               <div
                 style={{
                   position: "absolute",
@@ -563,7 +555,6 @@ export default function MeisiPage() {
                 {profile.history || ""}
               </div>
 
-              {/* QR */}
               {qrDataUrl && (
                 <button
                   type="button"
@@ -608,6 +599,7 @@ export default function MeisiPage() {
               }}
             >
               <button
+                type="button"
                 onClick={() => router.push("/me")}
                 style={{
                   padding: "12px 14px",
