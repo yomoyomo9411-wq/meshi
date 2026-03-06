@@ -2,69 +2,227 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { blueShinyStarIcon } from "./MapIcon";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import {
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
-import type { LatLngExpression } from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-const TOYAMA_PREF_UNIV: LatLngExpression = [36.706, 137.213];
-const TOKYO_STATION: LatLngExpression = [35.681236, 139.767125];
+import { auth } from "./lib/firebase";
+import { fetchEncountersByOwner } from "./lib/encounterClient";
 
-function Recenter({ center, zoom }: { center: LatLngExpression; zoom: number }) {
+const customPinIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// Lumina Us 最新の星（金）
+const goldStarIcon = L.divIcon({
+  html: `
+    <div style="width:70px;height:70px;display:flex;align-items:center;justify-content:center;position:relative;">
+      <div style="
+        position:absolute;
+        width:70px;
+        height:70px;
+        border-radius:50%;
+        background: radial-gradient(circle,
+          rgba(255,220,100,0.55) 0%,
+          rgba(255,200,50,0.25) 40%,
+          rgba(255,200,50,0) 70%
+        );
+        filter: blur(3px);
+      "></div>
+
+      <svg viewBox="0 0 100 100"
+        width="60"
+        height="60"
+        style="
+          position:relative;
+          z-index:2;
+          filter:
+            drop-shadow(0 0 6px rgba(255,215,80,0.9))
+            drop-shadow(0 0 16px rgba(255,200,0,0.6));
+        ">
+        <polygon
+          points="50,0 65,35 100,50 65,65 50,100 35,65 0,50 35,35"
+          fill="#FFD84D"
+        />
+      </svg>
+    </div>
+  `,
+  className: "",
+  iconSize: [70, 70],
+  iconAnchor: [35, 35],
+  popupAnchor: [0, -30],
+});
+
+// Lumina Us 過去の星（青）
+const blueStarIcon = L.divIcon({
+  html: `
+    <div style="width:60px;height:60px;display:flex;align-items:center;justify-content:center;position:relative;">
+      <div style="
+        position:absolute;
+        width:60px;
+        height:60px;
+        border-radius:50%;
+        background: radial-gradient(circle,
+          rgba(120,180,255,0.45) 0%,
+          rgba(120,180,255,0.18) 40%,
+          rgba(120,180,255,0) 70%
+        );
+        filter: blur(2px);
+      "></div>
+
+      <svg viewBox="0 0 100 100"
+        width="50"
+        height="50"
+        style="
+          position:relative;
+          z-index:2;
+          filter: drop-shadow(0 0 6px rgba(80,150,255,0.6));
+        ">
+        <polygon
+          points="50,0 65,35 100,50 65,65 50,100 35,65 0,50 35,35"
+          fill="#3B82F6"
+        />
+      </svg>
+    </div>
+  `,
+  className: "",
+  iconSize: [60, 60],
+  iconAnchor: [30, 30],
+  popupAnchor: [0, -24],
+});
+
+const TOYAMA_PREF_UNIV: [number, number] = [36.706, 137.213];
+const TOKYO_STATION: [number, number] = [35.681236, 139.767125];
+
+function Recenter({
+  center,
+  zoom,
+}: {
+  center: [number, number];
+  zoom: number;
+}) {
   const map = useMap();
+
   useEffect(() => {
     map.setView(center, zoom, { animate: true });
   }, [center, zoom, map]);
+
   return null;
 }
 
 export default function MapComponent() {
   const router = useRouter();
 
-  const [center, setCenter] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
-  const [markerPos, setMarkerPos] = useState<LatLngExpression>(TOYAMA_PREF_UNIV);
-  const [status, setStatus] = useState<string>("現在地を取得中…");
+  const [user, setUser] = useState<User | null>(null);
+  const [encounters, setEncounters] = useState<any[]>([]);
+
+  const [center, setCenter] = useState<[number, number]>(TOYAMA_PREF_UNIV);
+  const [markerPos, setMarkerPos] = useState<[number, number]>(TOYAMA_PREF_UNIV);
+  const [status, setStatus] = useState("現在地を取得中…");
+
   const zoom = 15;
 
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+
+      if (!u) {
+        setEncounters([]);
+        return;
+      }
+
+      try {
+        const list = await fetchEncountersByOwner(u.uid);
+        setEncounters(list);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
     if (!("geolocation" in navigator)) {
-      setStatus("位置情報が使えません。");
+      setStatus("この端末/ブラウザでは位置情報が使えません。");
+      setCenter(TOYAMA_PREF_UNIV);
+      setMarkerPos(TOYAMA_PREF_UNIV);
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const latlng: LatLngExpression = [
+        const latlng: [number, number] = [
           pos.coords.latitude,
           pos.coords.longitude,
         ];
+
         setCenter(latlng);
         setMarkerPos(latlng);
         setStatus("現在地を表示しています。");
       },
-      () => setStatus("位置情報を取得できませんでした。"),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      () => {
+        setStatus(
+          "位置情報を取得できませんでした。富山県立大学を中心に表示します。"
+        );
+        setCenter(TOYAMA_PREF_UNIV);
+        setMarkerPos(TOYAMA_PREF_UNIV);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0,
+      }
     );
   }, []);
 
   const refetchLocation = () => {
+    if (!("geolocation" in navigator)) return;
+
     setStatus("現在地を再取得中…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const latlng: LatLngExpression = [
+        const latlng: [number, number] = [
           pos.coords.latitude,
           pos.coords.longitude,
         ];
+
         setCenter(latlng);
         setMarkerPos(latlng);
         setStatus("現在地を表示しています。");
       },
-      () => setStatus("位置情報を取得できませんでした。"),
-      { enableHighAccuracy: true, timeout: 8000 }
+      () => {
+        setStatus("位置情報を取得できませんでした。");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0,
+      }
     );
   };
 
   const safeCenter = useMemo(() => center, [center]);
+
+  const formatTime = (createdAt: any) => {
+    const sec = createdAt?.seconds;
+    if (!sec) return "保存直後";
+    return new Date(sec * 1000).toLocaleString("ja-JP");
+  };
 
   return (
     <div style={{ height: "100vh", width: "100%", position: "relative" }}>
@@ -74,24 +232,47 @@ export default function MapComponent() {
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
-          attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
-          url="https://{s}.tile.jawg.io/jawg-terrain/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
         <Recenter center={safeCenter} zoom={zoom} />
 
-        <Marker
-          position={markerPos}
-          icon={blueShinyStarIcon as L.DivIcon}
-          eventHandlers={{
-            click: () => {
-              router.push("/me"); // 星クリックでマイページへ（現状維持）
-            },
-          }}
-        />
+        <Marker position={markerPos} icon={customPinIcon}>
+          <Popup>
+            <div style={{ fontSize: 14 }}>
+              <div style={{ fontWeight: 700 }}>現在地</div>
+              <div>{status}</div>
+            </div>
+          </Popup>
+        </Marker>
+
+        {encounters.map((item) => (
+          <Marker
+            key={item.id}
+            position={[item.lat, item.lng]}
+            icon={item.isLatest ? goldStarIcon : blueStarIcon}
+          >
+            <Popup>
+              <div style={{ fontSize: 14, minWidth: 200 }}>
+                <div style={{ fontWeight: 800 }}>
+                  {item.snapshot?.name || "名前未設定"}
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  {item.snapshot?.affiliation || "所属未設定"}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  交換時間：{formatTime(item.createdAt)}
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  交換場所：{item.address || "住所不明"}
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
       </MapContainer>
 
-      {/* ステータスバー */}
       <div
         style={{
           position: "fixed",
@@ -109,12 +290,34 @@ export default function MapComponent() {
         {status}
       </div>
 
-      {/* 右下：現在地へ */}
+      <button
+        onClick={() => router.push("/scan")}
+        style={{
+          position: "fixed",
+          bottom: 160,
+          right: 16,
+          zIndex: 2000,
+          width: 64,
+          height: 64,
+          borderRadius: 16,
+          border: "none",
+          background: "#22c55e",
+          color: "#111827",
+          fontWeight: 900,
+          fontSize: 28,
+          display: "grid",
+          placeItems: "center",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+        }}
+      >
+        QR
+      </button>
+
       <button
         onClick={refetchLocation}
         style={{
           position: "fixed",
-          bottom: 72,
+          bottom: 88,
           right: 16,
           zIndex: 2000,
           padding: "12px 14px",
@@ -129,7 +332,6 @@ export default function MapComponent() {
         現在地へ
       </button>
 
-      {/* 下部：マイページ / 名刺 ボタン */}
       <div
         style={{
           position: "fixed",
@@ -139,41 +341,55 @@ export default function MapComponent() {
           zIndex: 2000,
           padding: 12,
           background: "rgba(0,0,0,0.55)",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 10,
         }}
       >
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={() => router.push("/me")}
-            style={{
-              flex: 1,
-              padding: "14px 16px",
-              borderRadius: 14,
-              border: "none",
-              background: "rgba(255,255,255)",
-              color: "#111827",
-              fontWeight: 800,
-              fontSize: 16,
-            }}
-          >
-            マイページ編集
-          </button>
+        <button
+          onClick={() => router.push("/me")}
+          style={{
+            padding: "14px 16px",
+            borderRadius: 14,
+            border: "none",
+            background: "#22c55e",
+            color: "#111827",
+            fontWeight: 800,
+            fontSize: 15,
+          }}
+        >
+          マイページ編集
+        </button>
 
-          <button
-            onClick={() => router.push("/meisi")}
-            style={{
-              flex: 1,
-              padding: "14px 16px",
-              borderRadius: 14,
-              border: "none",
-              background: "#f59e0b",
-              color: "white",
-              fontWeight: 800,
-              fontSize: 16,
-            }}
-          >
-            名刺
-          </button>
-        </div>
+        <button
+          onClick={() => router.push("/meisi")}
+          style={{
+            padding: "14px 16px",
+            borderRadius: 14,
+            border: "none",
+            background: "#f59e0b",
+            color: "#111827",
+            fontWeight: 800,
+            fontSize: 15,
+          }}
+        >
+          My名刺
+        </button>
+
+        <button
+          onClick={() => router.push("/cards")}
+          style={{
+            padding: "14px 16px",
+            borderRadius: 14,
+            border: "none",
+            background: "#60a5fa",
+            color: "#111827",
+            fontWeight: 800,
+            fontSize: 15,
+          }}
+        >
+          名刺一覧
+        </button>
       </div>
     </div>
   );

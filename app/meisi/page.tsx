@@ -443,7 +443,6 @@ export default function MeisiPage() {
                   display: "block",
                   borderRadius: 24,
                 }}
-              />
 
               {/* 写真（月っぽい黄色い光付き） */}
               <div
