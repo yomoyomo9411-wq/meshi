@@ -141,11 +141,18 @@ export default function MeisiPage() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#020617",
         color: "white",
         padding: 16,
         position: "relative",
         overflow: "hidden",
+        backgroundColor: "#020617",
+        backgroundImage: `
+          radial-gradient(circle at 12% 88%, rgba(56, 189, 248, 0.42) 0%, rgba(56, 189, 248, 0.18) 18%, rgba(56, 189, 248, 0.00) 42%),
+          radial-gradient(circle at 68% 30%, rgba(168, 85, 247, 0.40) 0%, rgba(168, 85, 247, 0.16) 20%, rgba(168, 85, 247, 0.00) 46%),
+          radial-gradient(circle at 82% 12%, rgba(59, 130, 246, 0.24) 0%, rgba(59, 130, 246, 0.10) 16%, rgba(59, 130, 246, 0.00) 36%),
+          radial-gradient(circle at 38% 56%, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 14%, rgba(255, 255, 255, 0.00) 32%),
+          linear-gradient(180deg, #071224 0%, #040b18 48%, #020617 100%)
+        `,
       }}
     >
       {/* 固定の星背景：多め版 */}
@@ -187,6 +194,21 @@ export default function MeisiPage() {
         <span className="shooting-star shooting-star-2" />
         <span className="shooting-star shooting-star-3" />
       </div>
+
+      {/* うっすら霧っぽい光 */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 0,
+          background: `
+            radial-gradient(circle at 50% 18%, rgba(255,255,255,0.04), rgba(255,255,255,0.00) 28%),
+            radial-gradient(circle at 20% 78%, rgba(255,255,255,0.03), rgba(255,255,255,0.00) 24%)
+          `,
+          mixBlendMode: "screen",
+        }}
+      />
 
       {/* QR拡大モーダル */}
       {qrOpen && qrDataUrl && (
@@ -408,7 +430,7 @@ export default function MeisiPage() {
               gap: 14,
               position: "relative",
               zIndex: 1,
-              backdropFilter: "blur(4px)",
+              backdropFilter: "blur(6px)",
             }}
           >
             {qrDataUrl && (
@@ -487,7 +509,7 @@ export default function MeisiPage() {
                     style={{
                       display: "inline-block",
                       marginTop: 6,
-                      color: "#60a5fa",
+                      color: "#7dd3fc",
                       fontWeight: 800,
                     }}
                   >
@@ -502,7 +524,7 @@ export default function MeisiPage() {
                 style={{
                   padding: 12,
                   borderRadius: 14,
-                  background: "rgba(0,0,0,0.25)",
+                  background: "rgba(0,0,0,0.20)",
                   border: "1px solid rgba(255,255,255,0.10)",
                   whiteSpace: "pre-wrap",
                   lineHeight: 1.5,
