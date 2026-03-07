@@ -8,7 +8,10 @@ import {
   query,
   serverTimestamp,
   Unsubscribe,
+  doc,
+  setDoc,
 } from "firebase/firestore";
+
 import { db } from "./firebase";
 
 export type ChatMessage = {
@@ -36,6 +39,7 @@ export function subscribeMessages(
       id: doc.id,
       ...(doc.data() as Omit<ChatMessage, "id">),
     }));
+
     callback(list);
   });
 }
@@ -48,9 +52,33 @@ export async function sendMessage(
   const value = text.trim();
   if (!value) return;
 
+  // メッセージ保存
   await addDoc(collection(db, "chatRooms", roomId, "messages"), {
     text: value,
     senderUid,
     createdAt: serverTimestamp(),
   });
+
+  // 最終メッセージ更新（未読判定に使う）
+  await setDoc(
+    doc(db, "chatRooms", roomId),
+    {
+      lastMessage: {
+        text: value,
+        senderUid,
+        createdAt: serverTimestamp(),
+      },
+    },
+    { merge: true }
+  );
+}
+
+export async function markAsRead(roomId: string, uid: string) {
+  await setDoc(
+    doc(db, "chatRooms", roomId, "members", uid),
+    {
+      lastReadAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }

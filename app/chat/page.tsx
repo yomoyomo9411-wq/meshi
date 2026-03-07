@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
 import { auth } from "../lib/firebase";
+import { db } from "../lib/firebase";
+
+import { collection, onSnapshot } from "firebase/firestore";
+
 import { fetchLatestCardsByOwner } from "../lib/encounterClient";
 
 export default function ChatListPage() {
@@ -13,6 +17,8 @@ export default function ChatListPage() {
   const [user, setUser] = useState<User | null>(null);
   const [people, setPeople] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [unreadMap, setUnreadMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -25,6 +31,7 @@ export default function ChatListPage() {
       }
 
       setLoading(true);
+
       try {
         const latestCards = await fetchLatestCardsByOwner(u.uid);
         setPeople(latestCards);
@@ -37,6 +44,34 @@ export default function ChatListPage() {
 
     return () => unsub();
   }, []);
+
+  // 未読メッセージ監視
+  useEffect(() => {
+    if (!user) return;
+
+    const unsub = onSnapshot(collection(db, "chatRooms"), (snap) => {
+      const map: Record<string, boolean> = {};
+
+      snap.docs.forEach((doc) => {
+        const roomId = doc.id;
+
+        if (!roomId.includes(user.uid)) return;
+
+        const data = doc.data();
+        const lastMessage = data?.lastMessage;
+
+        if (!lastMessage) return;
+
+        if (lastMessage.senderUid !== user.uid) {
+          map[roomId] = true;
+        }
+      });
+
+      setUnreadMap(map);
+    });
+
+    return () => unsub();
+  }, [user]);
 
   return (
     <div
@@ -61,6 +96,7 @@ export default function ChatListPage() {
         >
           ← 地図へ
         </button>
+
         <div style={{ fontSize: 18, fontWeight: 900 }}>チャット</div>
       </div>
 
@@ -72,55 +108,79 @@ export default function ChatListPage() {
         </div>
       ) : (
         <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
-          {people.map((item) => (
-            <button
-              key={item.otherUid}
-              onClick={() => router.push(`/chat/${item.otherUid}`)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                padding: 14,
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.08)",
-                color: "white",
-                textAlign: "left",
-              }}
-            >
-              <div
+          {people.map((item) => {
+            const roomId = [user?.uid, item.otherUid].sort().join("__");
+            const unread = unreadMap[roomId];
+
+            return (
+              <button
+                key={item.otherUid}
+                onClick={() => router.push(`/chat/${item.otherUid}`)}
                 style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  background: "rgba(255,255,255,0.10)",
-                  flexShrink: 0,
-                  display: "grid",
-                  placeItems: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: 14,
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "white",
+                  textAlign: "left",
+                  position: "relative",
                 }}
               >
-                {item.snapshot?.photoURL ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.snapshot.photoURL}
-                    alt="icon"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                ) : (
-                  <div style={{ fontWeight: 800 }}>No</div>
-                )}
-              </div>
+                {/* アイコン */}
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    background: "rgba(255,255,255,0.10)",
+                    flexShrink: 0,
+                    display: "grid",
+                    placeItems: "center",
+                    position: "relative",
+                  }}
+                >
+                  {item.snapshot?.photoURL ? (
+                    <img
+                      src={item.snapshot.photoURL}
+                      alt="icon"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <div style={{ fontWeight: 800 }}>No</div>
+                  )}
 
-              <div style={{ fontWeight: 800, fontSize: 16 }}>
-                {item.snapshot?.name || "名前未設定"}
-              </div>
-            </button>
-          ))}
+                  {/* 未読赤丸 */}
+                  {unread && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -2,
+                        right: -2,
+                        width: 14,
+                        height: 14,
+                        borderRadius: "50%",
+                        background: "#ef4444",
+                        border: "2px solid #0b1220",
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* 名前 */}
+                <div style={{ fontWeight: 800, fontSize: 16 }}>
+                  {item.snapshot?.name || "名前未設定"}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

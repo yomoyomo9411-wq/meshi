@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
 import { auth } from "../../lib/firebase";
+import { markAsRead } from "../../lib/chatClient";
+
 import {
   buildRoomId,
   sendMessage,
@@ -30,6 +32,13 @@ export default function ChatRoomPage() {
     if (!user) return "";
     return buildRoomId(user.uid, otherUid);
   }, [user, otherUid]);
+
+  useEffect(() => {
+  if (!user || !roomId) return;
+
+  markAsRead(roomId, user.uid);
+
+}, [messages]);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (u) => {
