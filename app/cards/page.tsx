@@ -114,19 +114,7 @@ export default function CardsPage() {
 
       {/* ヘッダー */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button
-          onClick={() => router.push("/")}
-          style={{
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: "none",
-            background: "rgba(255,255,255,0.12)",
-            color: "white",
-            fontWeight: 700,
-          }}
-        >
-          ← 地図へ
-        </button>
+       
 
         <div style={{ fontSize: 18, fontWeight: 900 }}>名刺一覧</div>
       </div>
@@ -292,6 +280,96 @@ export default function CardsPage() {
           }
         }
       `}</style>
+      <div
+  style={{
+    position: "fixed",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 2000,
+    padding: 12,
+    background: "rgba(0,0,0,0.6)",
+    backdropFilter: "blur(10px)",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+    gap: 8,
+  }}
+>
+  <button
+    onClick={() => router.push("/")}
+    style={{
+      padding: "14px 4px",
+      borderRadius: 12,
+      border: "none",
+      background: "#232323",
+      color: "#ffffff",
+      fontWeight: 800,
+      fontSize: "12px",
+    }}
+  >
+    ホーム
+  </button>
+
+  <button
+    onClick={() => router.push("/cards")}
+    style={{
+      padding: "14px 4px",
+      borderRadius: 12,
+      border: "none",
+      background: "#60a5fa",
+      color: "#111827",
+      fontWeight: 800,
+      fontSize: "12px",
+    }}
+  >
+    一覧
+  </button>
+
+  <button
+    onClick={() => router.push("/scan")}
+    style={{
+      padding: "14px 4px",
+      borderRadius: 12,
+      border: "none",
+      background: "#22c55e",
+      color: "white",
+      fontWeight: 800,
+      fontSize: "12px",
+    }}
+  >
+    QR
+  </button>
+
+  <button
+    onClick={() => router.push("/chat")}
+    style={{
+      padding: "14px 4px",
+      borderRadius: 12,
+      border: "none",
+      background: "#a855f7",
+      color: "white",
+      fontWeight: 800,
+      fontSize: "12px",
+    }}
+  >
+    チャット
+  </button>
+
+  <button
+    onClick={() => router.push("/meisi")}
+    style={{
+      padding: "14px 4px",
+      borderRadius: 12,
+      border: "none",
+      background: "#f59e0b",
+      color: "#111827",
+      fontWeight: 800,
+      fontSize: "12px",
+    }}
+  >
+    My名刺
+  </button>
+</div>
     </div>
   );
 }

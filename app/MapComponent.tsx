@@ -477,10 +477,41 @@ useEffect(() => {
       background: "rgba(0,0,0,0.6)",
       backdropFilter: "blur(10px)",
       display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr 1fr",
+      gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
       gap: 8,
     }}
   >
+    <button 
+    onClick={() => router.push("/")}
+    style={{
+        padding: "14px 4px",
+        borderRadius: 12,
+        border: "none",
+        background: "#232323",
+        color: "#ffffff",
+        fontWeight: 800,
+        fontSize: "12px",
+      }}
+      >
+
+  ホーム
+</button>
+
+<button
+      onClick={() => router.push("/cards")}
+      style={{
+        padding: "14px 4px",
+        borderRadius: 12,
+        border: "none",
+        background: "#60a5fa",
+        color: "#111827",
+        fontWeight: 800,
+        fontSize: "12px",
+      }}
+    >
+      一覧
+    </button>
+
     <button
       onClick={() => router.push("/scan")}
       style={{
@@ -496,37 +527,7 @@ useEffect(() => {
       QRスキャン
     </button>
 
-    <button
-      onClick={() => router.push("/meisi")}
-      style={{
-        padding: "14px 4px",
-        borderRadius: 12,
-        border: "none",
-        background: "#f59e0b",
-        color: "#111827",
-        fontWeight: 800,
-        fontSize: "12px",
-      }}
-    >
-      My名刺
-    </button>
-
-    <button
-      onClick={() => router.push("/cards")}
-      style={{
-        padding: "14px 4px",
-        borderRadius: 12,
-        border: "none",
-        background: "#60a5fa",
-        color: "#111827",
-        fontWeight: 800,
-        fontSize: "12px",
-      }}
-    >
-      一覧
-    </button>
-
-    <div style={{ position: "relative" }}>
+    
   <button
     onClick={() => router.push("/chat")}
     style={{
@@ -542,6 +543,27 @@ useEffect(() => {
   >
     チャット
   </button>
+
+<div style={{ position: "relative" }}>
+    <button
+      onClick={() => router.push("/meisi")}
+      style={{
+        padding: "14px 4px",
+        borderRadius: 12,
+        border: "none",
+        background: "#f59e0b",
+        color: "#111827",
+        fontWeight: 800,
+        fontSize: "12px",
+        width: "100%",
+      }}
+    >
+      My名刺
+    </button>
+
+    
+
+    
 
   {hasUnreadChat && (
     <div
