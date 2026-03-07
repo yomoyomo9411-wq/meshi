@@ -611,7 +611,7 @@ export default function MeisiPage() {
                   fontWeight: 900,
                 }}
               >
-                編集（/me）へ
+                編集へ
               </button>
             </div>
           </div>

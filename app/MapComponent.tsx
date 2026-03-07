@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   MapContainer,
@@ -69,6 +69,7 @@ export default function MapComponent() {
   const [storyIndex, setStoryIndex] = useState(0);
 
   const zoom = 15;
+  const handledFocusOtherUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -183,11 +184,18 @@ export default function MapComponent() {
   };
 
   const closeStory = () => {
+    const from = searchParams.get("from");
+
     setStoryOpen(false);
     setStoryLoading(false);
     setStoryItems([]);
     setStoryIndex(0);
-    router.push("/");
+
+    if (from === "cards") {
+      router.replace("/cards");
+    } else {
+      router.replace("/");
+    }
   };
 
   const currentStoryItem = storyItems[storyIndex] ?? null;
@@ -216,11 +224,23 @@ export default function MapComponent() {
   useEffect(() => {
     if (!user) return;
     if (encounters.length === 0) return;
-    if (storyOpen) return;
 
     const focusOtherUid = searchParams.get("focusOtherUid");
-    if (!focusOtherUid) return;
 
+    if (!focusOtherUid) {
+      handledFocusOtherUidRef.current = null;
+      return;
+    }
+
+    if (handledFocusOtherUidRef.current === focusOtherUid) {
+      return;
+    }
+
+    if (storyOpen) {
+      return;
+    }
+
+    handledFocusOtherUidRef.current = focusOtherUid;
     void openLatestStoryByOtherUid(focusOtherUid);
   }, [user, encounters, storyOpen, searchParams]);
 
