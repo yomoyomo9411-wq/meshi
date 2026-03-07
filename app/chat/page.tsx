@@ -1,0 +1,128 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged, type User } from "firebase/auth";
+
+import { auth } from "../lib/firebase";
+import { fetchLatestCardsByOwner } from "../lib/encounterClient";
+
+export default function ChatListPage() {
+  const router = useRouter();
+
+  const [user, setUser] = useState<User | null>(null);
+  const [people, setPeople] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+
+      if (!u) {
+        setPeople([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const latestCards = await fetchLatestCardsByOwner(u.uid);
+        setPeople(latestCards);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsub();
+  }, []);
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0b1220",
+        color: "white",
+        padding: 16,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button
+          onClick={() => router.push("/")}
+          style={{
+            padding: "10px 12px",
+            borderRadius: 12,
+            border: "none",
+            background: "rgba(255,255,255,0.12)",
+            color: "white",
+            fontWeight: 700,
+          }}
+        >
+          ← 地図へ
+        </button>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>チャット</div>
+      </div>
+
+      {loading ? (
+        <div style={{ marginTop: 16 }}>読み込み中…</div>
+      ) : people.length === 0 ? (
+        <div style={{ marginTop: 16, opacity: 0.85 }}>
+          まだチャットできる相手がいません。
+        </div>
+      ) : (
+        <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+          {people.map((item) => (
+            <button
+              key={item.otherUid}
+              onClick={() => router.push(`/chat/${item.otherUid}`)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                padding: 14,
+                borderRadius: 16,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.08)",
+                color: "white",
+                textAlign: "left",
+              }}
+            >
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  background: "rgba(255,255,255,0.10)",
+                  flexShrink: 0,
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                {item.snapshot?.photoURL ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.snapshot.photoURL}
+                    alt="icon"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  <div style={{ fontWeight: 800 }}>No</div>
+                )}
+              </div>
+
+              <div style={{ fontWeight: 800, fontSize: 16 }}>
+                {item.snapshot?.name || "名前未設定"}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

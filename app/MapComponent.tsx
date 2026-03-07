@@ -431,83 +431,83 @@ export default function MapComponent() {
         )}
 
         {/* 下部メニュー */}
-        {!storyOpen && (
-          <div
-            style={{
-              position: "fixed",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 2000,
-              padding: 12,
-              background: "rgba(0,0,0,0.6)",
-              backdropFilter: "blur(10px)",
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr 1fr",
-              gap: 8,
-            }}
-          >
-            <button
-              onClick={() => router.push("/scan")}
-              style={{
-                padding: "14px 4px",
-                borderRadius: 12,
-                border: "none",
-                background: "#22c55e",
-                color: "white",
-                fontWeight: 800,
-                fontSize: "12px",
-              }}
-            >
-              QRスキャン
-            </button>
+{!storyOpen && (
+  <div
+    style={{
+      position: "fixed",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 2000,
+      padding: 12,
+      background: "rgba(0,0,0,0.6)",
+      backdropFilter: "blur(10px)",
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr 1fr 1fr",
+      gap: 8,
+    }}
+  >
+    <button
+      onClick={() => router.push("/scan")}
+      style={{
+        padding: "14px 4px",
+        borderRadius: 12,
+        border: "none",
+        background: "#22c55e",
+        color: "white",
+        fontWeight: 800,
+        fontSize: "12px",
+      }}
+    >
+      QRスキャン
+    </button>
 
-            <button
-              onClick={() => router.push("/me")}
-              style={{
-                padding: "14px 4px",
-                borderRadius: 12,
-                border: "none",
-                background: "white",
-                color: "#111827",
-                fontWeight: 800,
-                fontSize: "12px",
-              }}
-            >
-              編集
-            </button>
+    <button
+      onClick={() => router.push("/meisi")}
+      style={{
+        padding: "14px 4px",
+        borderRadius: 12,
+        border: "none",
+        background: "#f59e0b",
+        color: "#111827",
+        fontWeight: 800,
+        fontSize: "12px",
+      }}
+    >
+      My名刺
+    </button>
 
-            <button
-              onClick={() => router.push("/meisi")}
-              style={{
-                padding: "14px 4px",
-                borderRadius: 12,
-                border: "none",
-                background: "#f59e0b",
-                color: "#111827",
-                fontWeight: 800,
-                fontSize: "12px",
-              }}
-            >
-              My名刺
-            </button>
+    <button
+      onClick={() => router.push("/cards")}
+      style={{
+        padding: "14px 4px",
+        borderRadius: 12,
+        border: "none",
+        background: "#60a5fa",
+        color: "#111827",
+        fontWeight: 800,
+        fontSize: "12px",
+      }}
+    >
+      一覧
+    </button>
 
-            <button
-              onClick={() => router.push("/cards")}
-              style={{
-                padding: "14px 4px",
-                borderRadius: 12,
-                border: "none",
-                background: "#60a5fa",
-                color: "#111827",
-                fontWeight: 800,
-                fontSize: "12px",
-              }}
-            >
-              一覧
-            </button>
-          </div>
-        )}
+    <button
+      onClick={() => router.push("/chat")}
+      style={{
+        padding: "14px 4px",
+        borderRadius: 12,
+        border: "none",
+        background: "#a855f7",
+        color: "white",
+        fontWeight: 800,
+        fontSize: "12px",
+      }}
+    >
+      チャット
+    </button>
+  </div>
+)}
       </div>
 
       {/* 上60%のオーバーレイ */}
