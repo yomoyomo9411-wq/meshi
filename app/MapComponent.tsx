@@ -23,6 +23,10 @@ import {
   fetchEncounterHistoryByOwnerAndOther,
 } from "./lib/encounterClient";
 
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "./lib/firebase";
+
+
 const INITIAL_CENTER: [number, number] = [36.706, 137.213];
 
 function Recenter({
@@ -67,6 +71,8 @@ export default function MapComponent() {
   const [storyLoading, setStoryLoading] = useState(false);
   const [storyItems, setStoryItems] = useState<any[]>([]);
   const [storyIndex, setStoryIndex] = useState(0);
+
+  const [hasUnreadChat, setHasUnreadChat] = useState(false);
 
   const zoom = 15;
   const handledFocusOtherUidRef = useRef<string | null>(null);
@@ -243,6 +249,34 @@ export default function MapComponent() {
     handledFocusOtherUidRef.current = focusOtherUid;
     void openLatestStoryByOtherUid(focusOtherUid);
   }, [user, encounters, storyOpen, searchParams]);
+
+  // 未読チャット監視
+useEffect(() => {
+  if (!user) return;
+
+  const unsub = onSnapshot(collection(db, "chatRooms"), (snap) => {
+    let unread = false;
+
+    snap.docs.forEach((doc) => {
+      const roomId = doc.id;
+
+      if (!roomId.includes(user.uid)) return;
+
+      const data = doc.data();
+      const lastMessage = data?.lastMessage;
+
+      if (!lastMessage) return;
+
+      if (lastMessage.senderUid !== user.uid) {
+        unread = true;
+      }
+    });
+
+    setHasUnreadChat(unread);
+  });
+
+  return () => unsub();
+}, [user]);
 
   if (!mounted) return null;
 
@@ -492,20 +526,37 @@ export default function MapComponent() {
       一覧
     </button>
 
-    <button
-      onClick={() => router.push("/chat")}
+    <div style={{ position: "relative" }}>
+  <button
+    onClick={() => router.push("/chat")}
+    style={{
+      padding: "14px 4px",
+      borderRadius: 12,
+      border: "none",
+      background: "#a855f7",
+      color: "white",
+      fontWeight: 800,
+      fontSize: "12px",
+      width: "100%",
+    }}
+  >
+    チャット
+  </button>
+
+  {hasUnreadChat && (
+    <div
       style={{
-        padding: "14px 4px",
-        borderRadius: 12,
-        border: "none",
-        background: "#a855f7",
-        color: "white",
-        fontWeight: 800,
-        fontSize: "12px",
+        position: "absolute",
+        top: 6,
+        right: 6,
+        width: 12,
+        height: 12,
+        borderRadius: "50%",
+        background: "#ef4444",
       }}
-    >
-      チャット
-    </button>
+    />
+  )}
+</div>
   </div>
 )}
       </div>
