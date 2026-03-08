@@ -471,7 +471,6 @@ useEffect(() => {
 {!storyOpen && (
   <div
   style={{
-    height: "100px",
     padding: "12px 12px calc(12px + env(safe-area-inset-bottom))",
     background: "rgba(0,0,0,0.8)",
     backdropFilter: "blur(10px)",
@@ -525,7 +524,7 @@ useEffect(() => {
         fontSize: "12px",
       }}
     >
-      QRスキャン
+      QR
     </button>
 
     
@@ -545,7 +544,7 @@ useEffect(() => {
     チャット
   </button>
 
-<div style={{ position: "relative" }}>
+
     <button
       onClick={() => router.push("/meisi")}
       style={{
@@ -566,20 +565,7 @@ useEffect(() => {
 
     
 
-  {hasUnreadChat && (
-    <div
-      style={{
-        position: "absolute",
-        top: 6,
-        right: 6,
-        width: 12,
-        height: 12,
-        borderRadius: "50%",
-        background: "#ef4444",
-      }}
-    />
-  )}
-</div>
+  
   </div>
 )}
       </div>
