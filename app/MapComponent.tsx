@@ -283,13 +283,16 @@ useEffect(() => {
   return (
     <>
       <div
-        style={{
-          height: "100vh",
-          width: "100%",
-          position: "relative",
-          background: "#111827",
-        }}
-      >
+  style={{
+    height: "100vh",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    background: "#111827",
+    overflow: "hidden"
+  }}
+>
+  <div style={{ flex: 1, position: "relative", width: "100%" }}></div>
         <MapContainer
           center={mapCenter}
           zoom={zoom}
@@ -446,8 +449,8 @@ useEffect(() => {
           <button
             onClick={handleGeolocation}
             style={{
-              position: "fixed",
-              bottom: 90,
+              position: "absolute",
+              bottom: 20,
               right: 16,
               zIndex: 2000,
               padding: "12px 18px",
@@ -467,20 +470,18 @@ useEffect(() => {
         {/* 下部メニュー */}
 {!storyOpen && (
   <div
-    style={{
-      position: "fixed",
-      left: 0,
-      right: 0,
-      bottom: 0,
-      zIndex: 2000,
-      padding: 12,
-      background: "rgba(0,0,0,0.6)",
-      backdropFilter: "blur(10px)",
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
-      gap: 8,
-    }}
-  >
+  style={{
+    height: "100px",
+    padding: "12px 12px calc(12px + env(safe-area-inset-bottom))",
+    background: "rgba(0,0,0,0.8)",
+    backdropFilter: "blur(10px)",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+    gap: 8,
+    borderTop: "1px solid rgba(255,255,255,0.1)",
+    zIndex: 2000
+  }}
+>
     <button 
     onClick={() => router.push("/")}
     style={{

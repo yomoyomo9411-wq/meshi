@@ -83,6 +83,11 @@ export default function CardHistoryPage() {
             borderRadius: 18,
             background: "rgba(255,255,255,0.08)",
             border: "1px solid rgba(255,255,255,0.10)",
+             display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "300px",
           }}
         >
           <div style={{ fontWeight: 900, fontSize: 20 }}>{latestName}</div>
