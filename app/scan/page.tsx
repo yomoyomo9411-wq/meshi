@@ -124,14 +124,18 @@ export default function ScanPage() {
             } catch (e) {
               console.error(e);
               hasScannedRef.current = false;
-              setStatus("プロフィール取得に失敗しました。もう一度読み取ってください。");
+              setStatus(
+                "プロフィール取得に失敗しました。もう一度読み取ってください。"
+              );
             }
           },
           () => {}
         );
       } catch (e) {
         console.error(e);
-        setStatus("カメラの起動に失敗しました。カメラ許可を確認してください。");
+        setStatus(
+          "カメラの起動に失敗しました。カメラ許可を確認してください。"
+        );
       }
     }
 
@@ -156,12 +160,14 @@ export default function ScanPage() {
     setStatus("現在地を取得しています…");
 
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 8000,
-        });
-      }).catch(() => {
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 8000,
+          });
+        }
+      ).catch(() => {
         throw new Error("LOCATION_ERROR");
       });
 
@@ -174,17 +180,17 @@ export default function ScanPage() {
       setTimeout(() => {
         router.push("/cards");
       }, 800);
-
     } catch (e: any) {
       console.error(e);
 
       if (e.message === "LOCATION_ERROR") {
         setStatus("位置情報が取得できませんでした。");
-        alert("位置情報が取得できなかったため、交換を中断しました。設定を確認してください。");
+        alert(
+          "位置情報が取得できなかったため、交換を中断しました。設定を確認してください。"
+        );
       } else {
         setStatus("保存に失敗しました");
       }
-
     } finally {
       setSaving(false);
     }
@@ -198,237 +204,264 @@ export default function ScanPage() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
         background: "#0b1220",
         color: "white",
-        padding: 16,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        
-
-        <div style={{ fontSize: 18, fontWeight: 900 }}>
-          QR読み取り
-        </div>
+      {/* 1. ヘッダー部分 */}
+      <div
+        style={{ padding: 16, display: "flex", alignItems: "center", gap: 12 }}
+      >
+        <div style={{ fontSize: 18, fontWeight: 900 }}>QR読み取り</div>
       </div>
 
+      {/* 中央エリア */}
       <div
         style={{
-          marginTop: 12,
-          padding: 12,
-          borderRadius: 12,
-          background: "rgba(255,255,255,0.08)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: 16,
+          paddingBottom: 110,
         }}
       >
-        {status}
-      </div>
-
-      {!scannedUid ? (
         <div
           style={{
-            marginTop: 16,
-            borderRadius: 18,
-            overflow: "hidden",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.10)",
+            marginTop: 12,
             padding: 12,
-          }}
-        >
-          <div id={readerId} />
-        </div>
-      ) : (
-        <div
-          style={{
-            marginTop: 16,
-            borderRadius: 18,
-            padding: 16,
+            borderRadius: 12,
             background: "rgba(255,255,255,0.08)",
             border: "1px solid rgba(255,255,255,0.10)",
-            display: "grid",
-            gap: 14,
           }}
         >
-          <div style={{ fontWeight: 900, fontSize: 18 }}>
-            交換相手の名刺
-          </div>
-
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <div
-              style={{
-                width: 76,
-                height: 76,
-                borderRadius: 16,
-                overflow: "hidden",
-                background: "rgba(255,255,255,0.10)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                display: "grid",
-                placeItems: "center",
-                flexShrink: 0,
-              }}
-            >
-              {scannedProfile.photoURL ? (
-                <img
-                  src={scannedProfile.photoURL}
-                  alt="profile"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <div style={{ fontWeight: 800, opacity: 0.85 }}>
-                  No
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 18 }}>
-                {scannedProfile.name || "名前未設定"}
-              </div>
-
-              <div style={{ opacity: 0.85, marginTop: 4 }}>
-                {scannedProfile.affiliation || "所属未設定"}
-              </div>
-            </div>
-          </div>
-
-          {scannedProfile.history?.trim() && (
-            <div
-              style={{
-                padding: 12,
-                borderRadius: 14,
-                background: "rgba(0,0,0,0.25)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                whiteSpace: "pre-wrap",
-                lineHeight: 1.5,
-              }}
-            >
-              {scannedProfile.history}
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              onClick={handleSaveEncounter}
-              disabled={saving}
-              style={{
-                flex: 1,
-                padding: "14px 16px",
-                borderRadius: 14,
-                border: "none",
-                background: "#f59e0b",
-                color: "#111827",
-                fontWeight: 900,
-              }}
-            >
-              交換する
-            </button>
-
-            <button
-              onClick={restartScan}
-              style={{
-                padding: "14px 16px",
-                borderRadius: 14,
-                border: "none",
-                background: "rgba(255,255,255,0.12)",
-                color: "white",
-                fontWeight: 900,
-              }}
-            >
-              読み直す
-            </button>
-          </div>
+          {status}
         </div>
-      )}
-      <div
-  style={{
-    position: "fixed",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 2000,
-    padding: 12,
-    background: "rgba(0,0,0,0.6)",
-    backdropFilter: "blur(10px)",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
-    gap: 8,
-  }}
->
-  <button
-    onClick={() => router.push("/")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#232323",
-      color: "#ffffff",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    ホーム
-  </button>
 
-  <button
-    onClick={() => router.push("/cards")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#60a5fa",
-      color: "#111827",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    一覧
-  </button>
+        {!scannedUid ? (
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              padding: 16,
+              paddingBottom: 100,
+            }}
+          >
+            <div
+              style={{
+                marginTop: 16,
+                borderRadius: 18,
+                overflow: "hidden",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                padding: 12,
+              }}
+            >
+              <div id={readerId} />
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: 16,
+              borderRadius: 18,
+              padding: 16,
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              display: "grid",
+              gap: 14,
+            }}
+          >
+            <div style={{ fontWeight: 900, fontSize: 18 }}>
+              交換相手の名刺
+            </div>
 
-  <button
-    onClick={() => router.push("/scan")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#22c55e",
-      color: "white",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    QR
-  </button>
+            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+              <div
+                style={{
+                  width: 76,
+                  height: 76,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  background: "rgba(255,255,255,0.10)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                {scannedProfile.photoURL ? (
+                  <img
+                    src={scannedProfile.photoURL}
+                    alt="profile"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                ) : (
+                  <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
+                )}
+              </div>
 
-  <button
-    onClick={() => router.push("/chat")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#a855f7",
-      color: "white",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    チャット
-  </button>
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 18 }}>
+                  {scannedProfile.name || "名前未設定"}
+                </div>
 
-  <button
-    onClick={() => router.push("/meisi")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#f59e0b",
-      color: "#111827",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    My名刺
-  </button>
-</div>
+                <div style={{ opacity: 0.85, marginTop: 4 }}>
+                  {scannedProfile.affiliation || "所属未設定"}
+                </div>
+              </div>
+            </div>
+
+            {scannedProfile.history?.trim() && (
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 14,
+                  background: "rgba(0,0,0,0.25)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  whiteSpace: "pre-wrap",
+                  lineHeight: 1.5,
+                }}
+              >
+                {scannedProfile.history}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={handleSaveEncounter}
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  border: "none",
+                  background: "#f59e0b",
+                  color: "#111827",
+                  fontWeight: 900,
+                }}
+              >
+                交換する
+              </button>
+
+              <button
+                onClick={restartScan}
+                style={{
+                  padding: "14px 16px",
+                  borderRadius: 14,
+                  border: "none",
+                  background: "rgba(255,255,255,0.12)",
+                  color: "white",
+                  fontWeight: 900,
+                }}
+              >
+                読み直す
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div
+          style={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 2000,
+            padding: 12,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(10px)",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+            gap: 8,
+          }}
+        >
+          <button
+            onClick={() => router.push("/")}
+            style={{
+              padding: "14px 4px",
+              borderRadius: 12,
+              border: "none",
+              background: "#232323",
+              color: "#ffffff",
+              fontWeight: 800,
+              fontSize: "12px",
+            }}
+          >
+            ホーム
+          </button>
+
+          <button
+            onClick={() => router.push("/cards")}
+            style={{
+              padding: "14px 4px",
+              borderRadius: 12,
+              border: "none",
+              background: "#60a5fa",
+              color: "#111827",
+              fontWeight: 800,
+              fontSize: "12px",
+            }}
+          >
+            一覧
+          </button>
+
+          <button
+            onClick={() => router.push("/scan")}
+            style={{
+              padding: "14px 4px",
+              borderRadius: 12,
+              border: "none",
+              background: "#22c55e",
+              color: "white",
+              fontWeight: 800,
+              fontSize: "12px",
+            }}
+          >
+            QR
+          </button>
+
+          <button
+            onClick={() => router.push("/chat")}
+            style={{
+              padding: "14px 4px",
+              borderRadius: 12,
+              border: "none",
+              background: "#a855f7",
+              color: "white",
+              fontWeight: 800,
+              fontSize: "12px",
+            }}
+          >
+            チャット
+          </button>
+
+          <button
+            onClick={() => router.push("/meisi")}
+            style={{
+              padding: "14px 4px",
+              borderRadius: 12,
+              border: "none",
+              background: "#f59e0b",
+              color: "#111827",
+              fontWeight: 800,
+              fontSize: "12px",
+            }}
+          >
+            My名刺
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
