@@ -24,7 +24,9 @@ type Profile = {
   photoURL: string;
   name: string;
   affiliation: string;
-  sns: string;
+  instagram: string;
+  x: string;
+  otherSns: string;
   history: string;
 };
 
@@ -34,9 +36,44 @@ const defaultProfile: Profile = {
   photoURL: "",
   name: "",
   affiliation: "",
-  sns: "",
+  instagram: "",
+  x: "",
+  otherSns: "",
   history: "",
 };
+
+function parseSns(raw?: string) {
+  if (!raw?.trim()) {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      instagram: parsed?.instagram ?? "",
+      x: parsed?.x ?? "",
+      otherSns: parsed?.otherSns ?? "",
+    };
+  } catch {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: raw ?? "",
+    };
+  }
+}
+
+function buildSnsString(profile: Profile) {
+  return JSON.stringify({
+    instagram: profile.instagram.trim(),
+    x: profile.x.trim(),
+    otherSns: profile.otherSns.trim(),
+  });
+}
 
 export default function MyPage() {
   const router = useRouter();
@@ -72,11 +109,14 @@ export default function MyPage() {
       try {
         const p = await fetchProfile(u.uid);
         if (p) {
+          const sns = parseSns(p.sns ?? "");
           setProfile({
             photoURL: p.photoURL ?? "",
             name: p.name ?? "",
             affiliation: p.affiliation ?? "",
-            sns: p.sns ?? "",
+            instagram: sns.instagram,
+            x: sns.x,
+            otherSns: sns.otherSns,
             history: p.history ?? "",
           });
         } else {
@@ -112,7 +152,7 @@ export default function MyPage() {
       photoURL: profile.photoURL,
       name: profile.name.trim(),
       affiliation: profile.affiliation.trim(),
-      sns: profile.sns.trim(),
+      sns: buildSnsString(profile),
       history: profile.history.trim(),
     };
 
@@ -541,10 +581,24 @@ export default function MyPage() {
             />
 
             <Field
-              label="SNSリンク（自由記入）"
-              value={profile.sns}
-              onChange={(v) => setProfile((p) => ({ ...p, sns: v }))}
-              placeholder="例）https://x.com/xxxx / https://github.com/xxxx"
+              label="Instagram（自由記入）"
+              value={profile.instagram}
+              onChange={(v) => setProfile((p) => ({ ...p, instagram: v }))}
+              placeholder="例）https://instagram.com/xxxx"
+            />
+
+            <Field
+              label="X（自由記入）"
+              value={profile.x}
+              onChange={(v) => setProfile((p) => ({ ...p, x: v }))}
+              placeholder="例）https://x.com/xxxx"
+            />
+
+            <Field
+              label="その他SNS（自由記入）"
+              value={profile.otherSns}
+              onChange={(v) => setProfile((p) => ({ ...p, otherSns: v }))}
+              placeholder="例）https://github.com/xxxx"
             />
 
             <TextAreaField

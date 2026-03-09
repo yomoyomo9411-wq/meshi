@@ -10,6 +10,9 @@ import {
   QrCode,
   MessageCircle,
   IdCard,
+  Instagram,
+  Twitter,
+  Link2,
 } from "lucide-react";
 
 import { auth } from "../lib/firebase";
@@ -24,6 +27,39 @@ const defaultProfile: ProfileDoc = {
 };
 
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
+
+function parseSns(raw?: string) {
+  if (!raw?.trim()) {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      instagram: parsed?.instagram ?? "",
+      x: parsed?.x ?? "",
+      otherSns: parsed?.otherSns ?? "",
+    };
+  } catch {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: raw ?? "",
+    };
+  }
+}
+
+function buildHref(value: string) {
+  const s = value.trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.includes(".")) return `https://${s}`;
+  return "";
+}
 
 export default function MeisiPage() {
   const router = useRouter();
@@ -45,6 +81,31 @@ export default function MeisiPage() {
     () => profile.name.trim().length > 0,
     [profile.name]
   );
+
+  const snsLinks = useMemo(() => {
+    const parsed = parseSns(profile.sns ?? "");
+
+    return [
+      {
+        label: "Instagram",
+        value: parsed.instagram,
+        href: buildHref(parsed.instagram),
+        icon: Instagram,
+      },
+      {
+        label: "X",
+        value: parsed.x,
+        href: buildHref(parsed.x),
+        icon: Twitter,
+      },
+      {
+        label: "その他SNS",
+        value: parsed.otherSns,
+        href: buildHref(parsed.otherSns),
+        icon: Link2,
+      },
+    ].filter((item) => item.value.trim().length > 0 && item.href);
+  }, [profile.sns]);
 
   const loadFromFirestore = async (uid: string) => {
     setErrorMsg("");
@@ -127,14 +188,6 @@ export default function MeisiPage() {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [user]);
-
-  const snsHref = useMemo(() => {
-    const s = profile.sns?.trim();
-    if (!s) return "";
-    if (s.startsWith("http://") || s.startsWith("https://")) return s;
-    if (s.includes(".")) return `https://${s}`;
-    return "";
-  }, [profile.sns]);
 
   const showLoading = !loadedAuth || loadingProfile;
 
@@ -641,15 +694,17 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "40%",
+                  top: "39.9%",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  width: "72%",
+                  width: "74%",
                   textAlign: "center",
                   color: "#1f174d",
                   fontWeight: 600,
-                  fontSize: "clamp(10px, 2vw, 17px)",
-                  lineHeight: 1.35,
+                  fontSize: "clamp(9px, 1.7vw, 15px)",
+                  lineHeight: 1.24,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
                 }}
               >
                 {profile.affiliation || "所属未設定"}
@@ -658,45 +713,83 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "53.5%",
+                  top: "47.3%",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  width: "76%",
-                  textAlign: "center",
-                  fontSize: "clamp(11px, 1.9vw, 16px)",
-                  lineHeight: 1.35,
-                  color: "#4b5563",
-                  wordBreak: "break-word",
+                  width: "74%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "flex-start",
+                  gap: 16,
                 }}
               >
-                {snsHref ? (
-                  <a
-                    href={snsHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      color: "#3b82f6",
-                      textDecoration: "none",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {profile.sns}
-                  </a>
-                ) : profile.sns ? (
-                  <span>{profile.sns}</span>
-                ) : null}
+                {snsLinks.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={item.label}
+                      title={item.label}
+                      style={{
+                        width: 58,
+                        textDecoration: "none",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                        gap: 4,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: "999px",
+                          display: "grid",
+                          placeItems: "center",
+                          background: "rgba(255,255,255,0.72)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.14)",
+                        }}
+                      >
+                        <Icon
+                          size={18}
+                          strokeWidth={2.2}
+                          style={{ color: "#374151" }}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: "clamp(8px, 1.25vw, 10px)",
+                          lineHeight: 1.15,
+                          fontWeight: 700,
+                          color: "#4b5563",
+                          textAlign: "center",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
 
               <div
                 style={{
                   position: "absolute",
-                  top: "60.5%",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "76%",
-                  textAlign: "center",
-                  fontSize: "clamp(10px, 1.8vw, 15px)",
-                  lineHeight: 1.45,
+                  top: "60.2%",
+                  left: "8%",
+                  width: "84%",
+                  paddingRight: "21%",
+                  boxSizing: "border-box",
+                  textAlign: "left",
+                  fontSize: "clamp(8.5px, 1.45vw, 12px)",
+                  lineHeight: 1.28,
                   color: "#4b5563",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
