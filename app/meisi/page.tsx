@@ -658,7 +658,7 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "58.5%",
+                  top: "53.5%",
                   left: "50%",
                   transform: "translateX(-50%)",
                   width: "76%",
@@ -690,7 +690,7 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "66.5%",
+                  top: "60.5%",
                   left: "50%",
                   transform: "translateX(-50%)",
                   width: "76%",
