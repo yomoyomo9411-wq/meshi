@@ -12,22 +12,29 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import {
+  Home,
+  CreditCard,
+  QrCode,
+  MessageCircle,
+  IdCard,
+} from "lucide-react";
 
 import { blueShinyStarIcon, yellowShinyStarIcon } from "./MapIcon";
 import EncounterStoryOverlay from "./components/EncounterStoryOverlay";
 
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { auth } from "./lib/firebase";
+import { auth, db } from "./lib/firebase";
 import {
   fetchEncountersByOwner,
   fetchEncounterHistoryByOwnerAndOther,
 } from "./lib/encounterClient";
 
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "./lib/firebase";
-
 
 const INITIAL_CENTER: [number, number] = [36.706, 137.213];
+
+type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
 
 function Recenter({
   center,
@@ -66,13 +73,13 @@ export default function MapComponent() {
   const [isLocationError, setIsLocationError] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
 
-  // 出会い星座モード
   const [storyOpen, setStoryOpen] = useState(false);
   const [storyLoading, setStoryLoading] = useState(false);
   const [storyItems, setStoryItems] = useState<any[]>([]);
   const [storyIndex, setStoryIndex] = useState(0);
 
   const [hasUnreadChat, setHasUnreadChat] = useState(false);
+  const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
   const zoom = 15;
   const handledFocusOtherUidRef = useRef<string | null>(null);
@@ -250,327 +257,501 @@ export default function MapComponent() {
     void openLatestStoryByOtherUid(focusOtherUid);
   }, [user, encounters, storyOpen, searchParams]);
 
-  // 未読チャット監視
-useEffect(() => {
-  if (!user) return;
+  useEffect(() => {
+    if (!user) return;
 
-  const unsub = onSnapshot(collection(db, "chatRooms"), (snap) => {
-    let unread = false;
+    const unsub = onSnapshot(collection(db, "chatRooms"), (snap) => {
+      let unread = false;
 
-    snap.docs.forEach((doc) => {
-      const roomId = doc.id;
+      snap.docs.forEach((doc) => {
+        const roomId = doc.id;
 
-      if (!roomId.includes(user.uid)) return;
+        if (!roomId.includes(user.uid)) return;
 
-      const data = doc.data();
-      const lastMessage = data?.lastMessage;
+        const data = doc.data();
+        const lastMessage = data?.lastMessage;
 
-      if (!lastMessage) return;
+        if (!lastMessage) return;
 
-      if (lastMessage.senderUid !== user.uid) {
-        unread = true;
-      }
+        if (lastMessage.senderUid !== user.uid) {
+          unread = true;
+        }
+      });
+
+      setHasUnreadChat(unread);
     });
 
-    setHasUnreadChat(unread);
-  });
+    return () => unsub();
+  }, [user]);
 
-  return () => unsub();
-}, [user]);
+  const navButtonBase: React.CSSProperties = {
+    position: "relative",
+    padding: "10px 4px",
+    minHeight: 64,
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.16)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: "11px",
+    cursor: "pointer",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    background: `
+      linear-gradient(135deg,
+        rgba(99,102,241,0.22) 0%,
+        rgba(168,85,247,0.18) 35%,
+        rgba(59,130,246,0.20) 70%,
+        rgba(255,255,255,0.08) 100%)
+    `,
+    boxShadow: `
+      inset 0 1px 0 rgba(255,255,255,0.14),
+      inset 0 -1px 0 rgba(255,255,255,0.04),
+      0 6px 16px rgba(0,0,0,0.18)
+    `,
+    transition:
+      "transform 0.16s ease, box-shadow 0.18s ease, background 0.18s ease",
+  };
+
+  const activeNavButton: React.CSSProperties = {
+    ...navButtonBase,
+    border: "1px solid rgba(255,255,255,0.24)",
+    background: `
+      linear-gradient(135deg,
+        rgba(129,140,248,0.34) 0%,
+        rgba(192,132,252,0.28) 35%,
+        rgba(96,165,250,0.32) 70%,
+        rgba(255,255,255,0.14) 100%)
+    `,
+    boxShadow: `
+      inset 0 1px 0 rgba(255,255,255,0.22),
+      inset 0 -1px 0 rgba(255,255,255,0.06),
+      0 10px 24px rgba(76,110,245,0.28),
+      0 2px 10px rgba(168,85,247,0.20)
+    `,
+  };
+
+  const getPressedButtonStyle = (
+    isActive: boolean,
+    isPressed: boolean
+  ): React.CSSProperties => {
+    if (!isPressed) {
+      return isActive ? activeNavButton : navButtonBase;
+    }
+
+    return {
+      ...(isActive ? activeNavButton : navButtonBase),
+      transform: "scale(0.96)",
+      boxShadow: isActive
+        ? `
+          inset 0 1px 0 rgba(255,255,255,0.28),
+          0 0 18px rgba(255,255,255,0.24),
+          0 0 28px rgba(125,211,252,0.28),
+          0 0 40px rgba(168,85,247,0.24)
+        `
+        : `
+          inset 0 1px 0 rgba(255,255,255,0.20),
+          0 0 14px rgba(255,255,255,0.18),
+          0 0 24px rgba(125,211,252,0.22),
+          0 0 34px rgba(168,85,247,0.20)
+        `,
+    };
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 10,
+    lineHeight: 1,
+    whiteSpace: "nowrap",
+    opacity: 0.95,
+    transition: "all 0.16s ease",
+  };
+
+  const activeLabelStyle: React.CSSProperties = {
+    ...labelStyle,
+    fontWeight: 800,
+    opacity: 1,
+  };
+
+  const iconStyle: React.CSSProperties = {
+    filter: "drop-shadow(0 0 8px rgba(125,211,252,0.45))",
+    transition: "all 0.16s ease",
+  };
+
+  const activeIconStyle: React.CSSProperties = {
+    filter:
+      "drop-shadow(0 0 10px rgba(255,255,255,0.55)) drop-shadow(0 0 14px rgba(96,165,250,0.50))",
+    transition: "all 0.16s ease",
+  };
+
+  const getPressedLabelStyle = (
+    isActive: boolean,
+    isPressed: boolean
+  ): React.CSSProperties => {
+    const base = isActive ? activeLabelStyle : labelStyle;
+
+    if (!isPressed) return base;
+
+    return {
+      ...base,
+      color: "#ffffff",
+      textShadow: `
+        0 0 6px rgba(255,255,255,0.95),
+        0 0 12px rgba(255,255,255,0.85),
+        0 0 18px rgba(253,230,138,0.75),
+        0 0 28px rgba(125,211,252,0.55),
+        0 0 40px rgba(168,85,247,0.45)
+      `,
+      letterSpacing: "0.02em",
+      transform: "translateY(-1px)",
+    };
+  };
+
+  const getPressedIconStyle = (
+    isActive: boolean,
+    isPressed: boolean
+  ): React.CSSProperties => {
+    const base = isActive ? activeIconStyle : iconStyle;
+
+    if (!isPressed) return base;
+
+    return {
+      ...base,
+      filter: `
+        drop-shadow(0 0 6px rgba(255,255,255,0.95))
+        drop-shadow(0 0 14px rgba(253,230,138,0.80))
+        drop-shadow(0 0 22px rgba(125,211,252,0.60))
+        drop-shadow(0 0 30px rgba(168,85,247,0.45))
+      `,
+      transform: "scale(1.06)",
+    };
+  };
+
+  const pressHandlers = (tab: Exclude<TabKey, null>) => ({
+    onTouchStart: () => setPressedTab(tab),
+    onTouchEnd: () => setPressedTab(null),
+    onTouchCancel: () => setPressedTab(null),
+    onMouseDown: () => setPressedTab(tab),
+    onMouseUp: () => setPressedTab(null),
+    onMouseLeave: () => setPressedTab(null),
+  });
 
   if (!mounted) return null;
 
   return (
     <>
       <div
-  style={{
-    height: "100vh",
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    background: "#111827",
-    overflow: "hidden"
-  }}
->
-  <div style={{ flex: 1, position: "relative", width: "100%" }}></div>
-        <MapContainer
-          center={mapCenter}
-          zoom={zoom}
-          style={{ height: "100%", width: "100%", zIndex: 0 }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
-            url="https://{s}.tile.jawg.io/jawg-dark/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP"
-          />
+        style={{
+          height: "100vh",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          background: "#111827",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        <div style={{ flex: 1, position: "relative", width: "100%" }}>
+          <MapContainer
+            center={mapCenter}
+            zoom={zoom}
+            style={{ height: "100%", width: "100%", zIndex: 0 }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
+              url="https://{s}.tile.jawg.io/jawg-dark/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP"
+            />
 
-          <Recenter center={mapCenter} zoom={zoom} offsetY={mapOffsetY} />
+            <Recenter center={mapCenter} zoom={zoom} offsetY={mapOffsetY} />
 
-          {/* 自分の現在地 */}
-          {markerPos && (
-            <Marker position={markerPos} icon={blueShinyStarIcon as L.DivIcon}>
-              {!storyOpen && (
-                <Popup>
-                  <div style={{ textAlign: "center", fontWeight: 700 }}>
-                    あなた
-                  </div>
-                </Popup>
-              )}
-            </Marker>
-          )}
+            {markerPos && (
+              <Marker position={markerPos} icon={blueShinyStarIcon as L.DivIcon}>
+                {!storyOpen && (
+                  <Popup>
+                    <div style={{ textAlign: "center", fontWeight: 700 }}>
+                      あなた
+                    </div>
+                  </Popup>
+                )}
+              </Marker>
+            )}
 
-          {/* 通常モード：全部の星を表示（少しだけ位置をずらして重なり対策） */}
-          {!storyOpen &&
-            encounters
-              .filter((item) => {
-                const lat = Number(item?.lat);
-                const lng = Number(item?.lng);
-                return Number.isFinite(lat) && Number.isFinite(lng);
-              })
-              .map((item) => {
-                const lat = Number(item.lat);
-                const lng = Number(item.lng);
+            {!storyOpen &&
+              encounters
+                .filter((item) => {
+                  const lat = Number(item?.lat);
+                  const lng = Number(item?.lng);
+                  return Number.isFinite(lat) && Number.isFinite(lng);
+                })
+                .map((item) => {
+                  const lat = Number(item.lat);
+                  const lng = Number(item.lng);
 
-                const id = String(item.id || "0");
-                const n1 = parseInt(id.slice(-2), 16);
-                const n2 = parseInt(id.slice(-3), 16);
+                  const id = String(item.id || "0");
+                  const n1 = parseInt(id.slice(-2), 16);
+                  const n2 = parseInt(id.slice(-3), 16);
 
-                const latOffset =
-                  ((Number.isFinite(n1) ? n1 : 0) % 10 - 5) * 0.00003;
-                const lngOffset =
-                  ((Number.isFinite(n2) ? n2 : 0) % 10 - 5) * 0.00003;
+                  const latOffset =
+                    ((Number.isFinite(n1) ? n1 : 0) % 10 - 5) * 0.00003;
+                  const lngOffset =
+                    ((Number.isFinite(n2) ? n2 : 0) % 10 - 5) * 0.00003;
+
+                  return (
+                    <Marker
+                      key={item.id}
+                      position={[lat + latOffset, lng + lngOffset]}
+                      icon={
+                        item.isLatest
+                          ? (yellowShinyStarIcon as L.DivIcon)
+                          : (blueShinyStarIcon as L.DivIcon)
+                      }
+                      eventHandlers={{
+                        click: () => {
+                          void openStoryFromEncounter(item);
+                        },
+                      }}
+                    />
+                  );
+                })}
+
+            {storyOpen && currentLinePositions.length >= 2 && (
+              <>
+                <Polyline
+                  positions={currentLinePositions}
+                  pathOptions={{
+                    color: "rgba(253, 230, 138, 0.18)",
+                    weight: 18,
+                    opacity: 1,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+
+                <Polyline
+                  positions={currentLinePositions}
+                  pathOptions={{
+                    color: "rgba(125, 211, 252, 0.28)",
+                    weight: 10,
+                    opacity: 1,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+
+                <Polyline
+                  positions={currentLinePositions}
+                  pathOptions={{
+                    color: "#fde68a",
+                    weight: 4,
+                    opacity: 0.98,
+                    lineCap: "round",
+                    lineJoin: "round",
+                  }}
+                />
+              </>
+            )}
+
+            {storyOpen &&
+              storyItems.map((item, index) => {
+                const isCurrent = index === storyIndex;
 
                 return (
                   <Marker
-                    key={item.id}
-                    position={[lat + latOffset, lng + lngOffset]}
+                    key={item.id ?? `${item.otherUid}-${index}`}
+                    position={[item.lat, item.lng]}
                     icon={
-                      item.isLatest
+                      isCurrent
                         ? (yellowShinyStarIcon as L.DivIcon)
                         : (blueShinyStarIcon as L.DivIcon)
                     }
+                    zIndexOffset={isCurrent ? 1000 : 500}
                     eventHandlers={{
-                      click: () => {
-                        void openStoryFromEncounter(item);
-                      },
+                      click: () => setStoryIndex(index),
                     }}
                   />
                 );
               })}
+          </MapContainer>
 
-          {/* 出会い星座モード：発光ライン */}
-          {storyOpen && currentLinePositions.length >= 2 && (
-            <>
-              <Polyline
-                positions={currentLinePositions}
-                pathOptions={{
-                  color: "rgba(253, 230, 138, 0.18)",
-                  weight: 18,
-                  opacity: 1,
-                  lineCap: "round",
-                  lineJoin: "round",
-                }}
-              />
-
-              <Polyline
-                positions={currentLinePositions}
-                pathOptions={{
-                  color: "rgba(125, 211, 252, 0.28)",
-                  weight: 10,
-                  opacity: 1,
-                  lineCap: "round",
-                  lineJoin: "round",
-                }}
-              />
-
-              <Polyline
-                positions={currentLinePositions}
-                pathOptions={{
-                  color: "#fde68a",
-                  weight: 4,
-                  opacity: 0.98,
-                  lineCap: "round",
-                  lineJoin: "round",
-                }}
-              />
-            </>
-          )}
-
-          {/* 出会い星座モード：その人の星だけ表示 */}
-          {storyOpen &&
-            storyItems.map((item, index) => {
-              const isCurrent = index === storyIndex;
-
-              return (
-                <Marker
-                  key={item.id ?? `${item.otherUid}-${index}`}
-                  position={[item.lat, item.lng]}
-                  icon={
-                    isCurrent
-                      ? (yellowShinyStarIcon as L.DivIcon)
-                      : (blueShinyStarIcon as L.DivIcon)
-                  }
-                  zIndexOffset={isCurrent ? 1000 : 500}
-                  eventHandlers={{
-                    click: () => setStoryIndex(index),
-                  }}
-                />
-              );
-            })}
-        </MapContainer>
-
-        {/* ステータスバー */}
-        <div
-          style={{
-            position: "fixed",
-            top: 10,
-            left: 10,
-            right: 10,
-            zIndex: 2000,
-            padding: "10px 12px",
-            background: isLocationError
-              ? "rgba(220, 38, 38, 0.9)"
-              : "rgba(0,0,0,0.7)",
-            color: "white",
-            borderRadius: 12,
-            fontSize: 13,
-            textAlign: "center",
-            backdropFilter: "blur(4px)",
-            fontWeight: isLocationError ? "bold" : "normal",
-            transition: "all 0.3s",
-          }}
-        >
-          {storyOpen
-            ? "出会い星座モード：左右スワイプで履歴をたどれます"
-            : status}
-        </div>
-
-        {/* 右下ボタン */}
-        {!storyOpen && (
-          <button
-            onClick={handleGeolocation}
+          <div
             style={{
-              position: "absolute",
-              bottom: 20,
-              right: 16,
+              position: "fixed",
+              top: 10,
+              left: 10,
+              right: 10,
               zIndex: 2000,
-              padding: "12px 18px",
-              borderRadius: 999,
-              border: "none",
-              background: isLocationError ? "#dc2626" : "#2563eb",
+              padding: "10px 12px",
+              background: isLocationError
+                ? "rgba(220, 38, 38, 0.9)"
+                : "rgba(0,0,0,0.7)",
               color: "white",
-              fontWeight: 700,
-              boxShadow: "0 4px 15px rgba(0,0,0,0.4)",
-              cursor: "pointer",
+              borderRadius: 12,
+              fontSize: 13,
+              textAlign: "center",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              fontWeight: isLocationError ? "bold" : "normal",
+              transition: "all 0.3s",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
             }}
           >
-            {isLocationError ? "再試行" : "現在地へ"}
-          </button>
-        )}
+            {storyOpen
+              ? "出会い星座モード：左右スワイプで履歴をたどれます"
+              : status}
+          </div>
 
-        {/* 下部メニュー */}
-{!storyOpen && (
-  <div
-  style={{
-    padding: "12px 12px calc(12px + env(safe-area-inset-bottom))",
-    background: "rgba(0,0,0,0.8)",
-    backdropFilter: "blur(10px)",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
-    gap: 8,
-    borderTop: "1px solid rgba(255,255,255,0.1)",
-    zIndex: 2000
-  }}
->
-    <button 
-    onClick={() => router.push("/")}
-    style={{
-        padding: "14px 4px",
-        borderRadius: 12,
-        border: "none",
-        background: "#232323",
-        color: "#ffffff",
-        fontWeight: 800,
-        fontSize: "12px",
-      }}
-      >
+          {!storyOpen && (
+            <button
+              onClick={handleGeolocation}
+              style={{
+                position: "fixed",
+                bottom: 110,
+                right: 16,
+                zIndex: 2000,
+                padding: "12px 18px",
+                borderRadius: 999,
+                border: "none",
+                background: isLocationError ? "#dc2626" : "#2563eb",
+                color: "white",
+                fontWeight: 700,
+                boxShadow: "0 4px 15px rgba(0,0,0,0.4)",
+                cursor: "pointer",
+              }}
+            >
+              {isLocationError ? "再試行" : "現在地へ"}
+            </button>
+          )}
 
-  ホーム
-</button>
+          {!storyOpen && (
+            <div
+              style={{
+                position: "fixed",
+                left: 10,
+                right: 10,
+                bottom: 10,
+                zIndex: 2000,
+                padding: 10,
+                borderRadius: 28,
+                background: `
+                  linear-gradient(135deg,
+                    rgba(255,255,255,0.12) 0%,
+                    rgba(255,255,255,0.06) 100%)
+                `,
+                border: "1px solid rgba(255,255,255,0.16)",
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+                boxShadow: `
+                  0 14px 36px rgba(0,0,0,0.30),
+                  inset 0 1px 0 rgba(255,255,255,0.12)
+                `,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+                gap: 8,
+              }}
+            >
+              <button
+                onClick={() => router.push("/")}
+                style={getPressedButtonStyle(true, pressedTab === "home")}
+                {...pressHandlers("home")}
+              >
+                <Home
+                  size={20}
+                  strokeWidth={2.2}
+                  style={getPressedIconStyle(true, pressedTab === "home")}
+                />
+                <span style={getPressedLabelStyle(true, pressedTab === "home")}>
+                  ホーム
+                </span>
+              </button>
 
-<button
-      onClick={() => router.push("/cards")}
-      style={{
-        padding: "14px 4px",
-        borderRadius: 12,
-        border: "none",
-        background: "#60a5fa",
-        color: "#111827",
-        fontWeight: 800,
-        fontSize: "12px",
-      }}
-    >
-      一覧
-    </button>
+              <button
+                onClick={() => router.push("/cards")}
+                style={getPressedButtonStyle(false, pressedTab === "cards")}
+                {...pressHandlers("cards")}
+              >
+                <CreditCard
+                  size={20}
+                  strokeWidth={2.2}
+                  style={getPressedIconStyle(false, pressedTab === "cards")}
+                />
+                <span
+                  style={getPressedLabelStyle(false, pressedTab === "cards")}
+                >
+                  名刺一覧
+                </span>
+              </button>
 
-    <button
-      onClick={() => router.push("/scan")}
-      style={{
-        padding: "14px 4px",
-        borderRadius: 12,
-        border: "none",
-        background: "#22c55e",
-        color: "white",
-        fontWeight: 800,
-        fontSize: "12px",
-      }}
-    >
-      QR
-    </button>
+              <button
+                onClick={() => router.push("/scan")}
+                style={getPressedButtonStyle(false, pressedTab === "scan")}
+                {...pressHandlers("scan")}
+              >
+                <QrCode
+                  size={20}
+                  strokeWidth={2.2}
+                  style={getPressedIconStyle(false, pressedTab === "scan")}
+                />
+                <span style={getPressedLabelStyle(false, pressedTab === "scan")}>
+                  交換
+                </span>
+              </button>
 
-    
-  <button
-    onClick={() => router.push("/chat")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#a855f7",
-      color: "white",
-      fontWeight: 800,
-      fontSize: "12px",
-      width: "100%",
-    }}
-  >
-    チャット
-  </button>
+              <button
+                onClick={() => router.push("/chat")}
+                style={getPressedButtonStyle(false, pressedTab === "chat")}
+                {...pressHandlers("chat")}
+              >
+                <div style={{ position: "relative", display: "grid", placeItems: "center" }}>
+                  <MessageCircle
+                    size={20}
+                    strokeWidth={2.2}
+                    style={getPressedIconStyle(false, pressedTab === "chat")}
+                  />
+                  {hasUnreadChat && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: -2,
+                        right: -4,
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#ef4444",
+                        boxShadow: "0 0 10px rgba(239,68,68,0.7)",
+                      }}
+                    />
+                  )}
+                </div>
+                <span style={getPressedLabelStyle(false, pressedTab === "chat")}>
+                  チャット
+                </span>
+              </button>
 
-
-    <button
-      onClick={() => router.push("/meisi")}
-      style={{
-        padding: "14px 4px",
-        borderRadius: 12,
-        border: "none",
-        background: "#f59e0b",
-        color: "#111827",
-        fontWeight: 800,
-        fontSize: "12px",
-        width: "100%",
-      }}
-    >
-      My名刺
-    </button>
-
-    
-
-    
-
-  
-  </div>
-)}
+              <button
+                onClick={() => router.push("/meisi")}
+                style={getPressedButtonStyle(false, pressedTab === "meisi")}
+                {...pressHandlers("meisi")}
+              >
+                <IdCard
+                  size={20}
+                  strokeWidth={2.2}
+                  style={getPressedIconStyle(false, pressedTab === "meisi")}
+                />
+                <span
+                  style={getPressedLabelStyle(false, pressedTab === "meisi")}
+                >
+                  My名刺
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 上60%のオーバーレイ */}
       {storyOpen && !storyLoading && (
         <EncounterStoryOverlay
           open={storyOpen}
@@ -590,6 +771,7 @@ useEffect(() => {
             zIndex: 4999,
             background: "rgba(0,0,0,0.55)",
             backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
             display: "grid",
             placeItems: "center",
             color: "white",

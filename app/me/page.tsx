@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import {
+  Home,
+  CreditCard,
+  QrCode,
+  MessageCircle,
+  IdCard,
+} from "lucide-react";
 
 import AuthButton from "../components/AuthButton";
 import { auth } from "../lib/firebase";
@@ -21,6 +28,8 @@ type Profile = {
   history: string;
 };
 
+type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
+
 const defaultProfile: Profile = {
   photoURL: "",
   name: "",
@@ -37,6 +46,7 @@ export default function MyPage() {
   const [loading, setLoading] = useState<boolean>(true);
 
   const [savedMsg, setSavedMsg] = useState<string>("");
+  const [pressedTab, setPressedTab] = useState<TabKey>(null);
   const hideTimerRef = useRef<number | null>(null);
 
   const showToast = (msg: string) => {
@@ -143,12 +153,167 @@ export default function MyPage() {
     }
   };
 
+  const navButtonBase: React.CSSProperties = {
+    position: "relative",
+    padding: "10px 4px",
+    minHeight: 64,
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.16)",
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: "11px",
+    cursor: "pointer",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    background: `
+      linear-gradient(135deg,
+        rgba(99,102,241,0.22) 0%,
+        rgba(168,85,247,0.18) 35%,
+        rgba(59,130,246,0.20) 70%,
+        rgba(255,255,255,0.08) 100%)
+    `,
+    boxShadow: `
+      inset 0 1px 0 rgba(255,255,255,0.14),
+      inset 0 -1px 0 rgba(255,255,255,0.04),
+      0 6px 16px rgba(0,0,0,0.18)
+    `,
+    transition:
+      "transform 0.16s ease, box-shadow 0.18s ease, background 0.18s ease",
+  };
+
+  const activeNavButton: React.CSSProperties = {
+    ...navButtonBase,
+    border: "1px solid rgba(255,255,255,0.24)",
+    background: `
+      linear-gradient(135deg,
+        rgba(129,140,248,0.34) 0%,
+        rgba(192,132,252,0.28) 35%,
+        rgba(96,165,250,0.32) 70%,
+        rgba(255,255,255,0.14) 100%)
+    `,
+    boxShadow: `
+      inset 0 1px 0 rgba(255,255,255,0.22),
+      inset 0 -1px 0 rgba(255,255,255,0.06),
+      0 10px 24px rgba(76,110,245,0.28),
+      0 2px 10px rgba(168,85,247,0.20)
+    `,
+  };
+
+  const getPressedButtonStyle = (
+    isActive: boolean,
+    isPressed: boolean
+  ): React.CSSProperties => {
+    if (!isPressed) {
+      return isActive ? activeNavButton : navButtonBase;
+    }
+
+    return {
+      ...(isActive ? activeNavButton : navButtonBase),
+      transform: "scale(0.96)",
+      boxShadow: isActive
+        ? `
+          inset 0 1px 0 rgba(255,255,255,0.28),
+          0 0 18px rgba(255,255,255,0.24),
+          0 0 28px rgba(125,211,252,0.28),
+          0 0 40px rgba(168,85,247,0.24)
+        `
+        : `
+          inset 0 1px 0 rgba(255,255,255,0.20),
+          0 0 14px rgba(255,255,255,0.18),
+          0 0 24px rgba(125,211,252,0.22),
+          0 0 34px rgba(168,85,247,0.20)
+        `,
+    };
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 10,
+    lineHeight: 1,
+    whiteSpace: "nowrap",
+    opacity: 0.95,
+    transition: "all 0.16s ease",
+  };
+
+  const activeLabelStyle: React.CSSProperties = {
+    ...labelStyle,
+    fontWeight: 800,
+    opacity: 1,
+    color: "#fde68a",
+    textShadow: `
+      0 0 6px rgba(255,255,255,0.95),
+      0 0 12px rgba(255,255,255,0.85),
+      0 0 18px rgba(253,230,138,0.75),
+      0 0 28px rgba(125,211,252,0.55),
+      0 0 40px rgba(168,85,247,0.45)
+    `,
+  };
+
+  const iconStyle: React.CSSProperties = {
+    filter: "drop-shadow(0 0 8px rgba(125,211,252,0.45))",
+    transition: "all 0.16s ease",
+  };
+
+  const activeIconStyle: React.CSSProperties = {
+    color: "#fde68a",
+    filter: `
+      drop-shadow(0 0 6px rgba(255,255,255,0.95))
+      drop-shadow(0 0 14px rgba(253,230,138,0.80))
+      drop-shadow(0 0 22px rgba(125,211,252,0.60))
+      drop-shadow(0 0 30px rgba(168,85,247,0.45))
+    `,
+    transition: "all 0.16s ease",
+  };
+
+  const getPressedLabelStyle = (
+    isActive: boolean,
+    isPressed: boolean
+  ): React.CSSProperties => {
+    const base = isActive ? activeLabelStyle : labelStyle;
+
+    if (!isPressed) return base;
+
+    return {
+      ...base,
+      transform: "translateY(-1px)",
+    };
+  };
+
+  const getPressedIconStyle = (
+    isActive: boolean,
+    isPressed: boolean
+  ): React.CSSProperties => {
+    const base = isActive ? activeIconStyle : iconStyle;
+
+    if (!isPressed) return base;
+
+    return {
+      ...base,
+      transform: "scale(1.06)",
+    };
+  };
+
+  const pressHandlers = (tab: Exclude<TabKey, null>) => ({
+    onTouchStart: () => setPressedTab(tab),
+    onTouchEnd: () => setPressedTab(null),
+    onTouchCancel: () => setPressedTab(null),
+    onMouseDown: () => setPressedTab(tab),
+    onMouseUp: () => setPressedTab(null),
+    onMouseLeave: () => setPressedTab(null),
+  });
+
   return (
     <div
       style={{
         minHeight: "100vh",
         color: "white",
         padding: 16,
+        paddingBottom: 128,
         position: "relative",
         overflow: "hidden",
         backgroundColor: "#020617",
@@ -161,7 +326,6 @@ export default function MyPage() {
         `,
       }}
     >
-      {/* 固定の星背景 */}
       <div
         style={{
           position: "fixed",
@@ -186,7 +350,6 @@ export default function MyPage() {
         }}
       />
 
-      {/* 流れ星レイヤー */}
       <div
         style={{
           position: "fixed",
@@ -201,7 +364,6 @@ export default function MyPage() {
         <span className="shooting-star shooting-star-3" />
       </div>
 
-      {/* うっすら霧っぽい光 */}
       <div
         style={{
           position: "fixed",
@@ -216,8 +378,6 @@ export default function MyPage() {
         }}
       />
 
-      {/* 左下の宇宙飛行士 */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/astronaut.png"
         alt="astronaut"
@@ -234,7 +394,6 @@ export default function MyPage() {
         }}
       />
 
-      {/* 保存トースト */}
       {savedMsg && (
         <div
           style={{
@@ -267,7 +426,6 @@ export default function MyPage() {
         </div>
       )}
 
-      {/* ヘッダー */}
       <div
         style={{
           display: "flex",
@@ -277,16 +435,13 @@ export default function MyPage() {
           zIndex: 1,
         }}
       >
-        
         <div style={{ fontSize: 18, fontWeight: 800 }}>マイページ</div>
       </div>
 
-      {/* ログインUI */}
       <div style={{ marginTop: 12, position: "relative", zIndex: 1 }}>
         <AuthButton />
       </div>
 
-      {/* カード */}
       <div
         style={{
           marginTop: 16,
@@ -308,7 +463,6 @@ export default function MyPage() {
           </div>
         ) : (
           <>
-            {/* 画像 + 名前 */}
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
               <button
                 type="button"
@@ -332,7 +486,6 @@ export default function MyPage() {
                 title="タップして画像を選択"
               >
                 {profile.photoURL ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={profile.photoURL}
                     alt="profile"
@@ -531,96 +684,108 @@ export default function MyPage() {
           }
         }
       `}</style>
+
       <div
-  style={{
-    position: "fixed",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 2000,
-    padding: 12,
-    background: "rgba(0,0,0,0.6)",
-    backdropFilter: "blur(10px)",
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
-    gap: 8,
-  }}
->
-  <button
-    onClick={() => router.push("/")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#232323",
-      color: "#ffffff",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    ホーム
-  </button>
+        style={{
+          position: "fixed",
+          left: 10,
+          right: 10,
+          bottom: 10,
+          zIndex: 2000,
+          padding: 10,
+          borderRadius: 28,
+          background: `
+            linear-gradient(135deg,
+              rgba(255,255,255,0.12) 0%,
+              rgba(255,255,255,0.06) 100%)
+          `,
+          border: "1px solid rgba(255,255,255,0.16)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          boxShadow: `
+            0 14px 36px rgba(0,0,0,0.30),
+            inset 0 1px 0 rgba(255,255,255,0.12)
+          `,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+          gap: 8,
+        }}
+      >
+        <button
+          onClick={() => router.push("/")}
+          style={getPressedButtonStyle(false, pressedTab === "home")}
+          {...pressHandlers("home")}
+        >
+          <Home
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "home")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "home")}>
+            ホーム
+          </span>
+        </button>
 
-  <button
-    onClick={() => router.push("/cards")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#60a5fa",
-      color: "#111827",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    一覧
-  </button>
+        <button
+          onClick={() => router.push("/cards")}
+          style={getPressedButtonStyle(false, pressedTab === "cards")}
+          {...pressHandlers("cards")}
+        >
+          <CreditCard
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "cards")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "cards")}>
+            名刺一覧
+          </span>
+        </button>
 
-  <button
-    onClick={() => router.push("/scan")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#22c55e",
-      color: "white",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    QR
-  </button>
+        <button
+          onClick={() => router.push("/scan")}
+          style={getPressedButtonStyle(false, pressedTab === "scan")}
+          {...pressHandlers("scan")}
+        >
+          <QrCode
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "scan")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "scan")}>
+            交換
+          </span>
+        </button>
 
-  <button
-    onClick={() => router.push("/chat")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#a855f7",
-      color: "white",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    チャット
-  </button>
+        <button
+          onClick={() => router.push("/chat")}
+          style={getPressedButtonStyle(false, pressedTab === "chat")}
+          {...pressHandlers("chat")}
+        >
+          <MessageCircle
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "chat")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "chat")}>
+            チャット
+          </span>
+        </button>
 
-  <button
-    onClick={() => router.push("/meisi")}
-    style={{
-      padding: "14px 4px",
-      borderRadius: 12,
-      border: "none",
-      background: "#f59e0b",
-      color: "#111827",
-      fontWeight: 800,
-      fontSize: "12px",
-    }}
-  >
-    My名刺
-  </button>
-</div>
+        <button
+          onClick={() => router.push("/meisi")}
+          style={getPressedButtonStyle(false, pressedTab === "meisi")}
+          {...pressHandlers("meisi")}
+        >
+          <IdCard
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "meisi")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "meisi")}>
+            My名刺
+          </span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -651,7 +816,6 @@ function Field(props: {
           fontSize: 15,
         }}
       />
-      
     </div>
   );
 }
@@ -684,8 +848,6 @@ function TextAreaField(props: {
           resize: "vertical",
         }}
       />
-      
     </div>
-    
   );
 }
