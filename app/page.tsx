@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import OpeningSplash from "./components/OpeningSplash";
 
-// 地図をSSRしない
+// 地図コンポーネントをサーバー側で読み込まない（ssr: false）
 const Map = dynamic(() => import("./MapComponent"), {
   ssr: false,
   loading: () => (
@@ -25,35 +23,9 @@ const Map = dynamic(() => import("./MapComponent"), {
 });
 
 export default function Home() {
-  const [showOpening, setShowOpening] = useState(false);
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    const played = sessionStorage.getItem("openingPlayed");
-
-    if (!played) {
-      setShowOpening(true);
-    }
-
-    setChecked(true);
-  }, []);
-
-  const finishOpening = () => {
-    sessionStorage.setItem("openingPlayed", "true");
-    setShowOpening(false);
-  };
-
-  if (!checked) return null;
-
   return (
-    <>
-      {showOpening && <OpeningSplash onFinish={finishOpening} />}
-      {!showOpening && (
-        <main style={{ margin: 0, padding: 0 }}>
-          <Map />
-        </main>
-      )}
-    </>
+    <main style={{ margin: 0, padding: 0 }}>
+      <Map />
+    </main>
   );
 }
-//test
