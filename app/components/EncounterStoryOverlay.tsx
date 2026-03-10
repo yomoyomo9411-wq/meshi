@@ -449,89 +449,33 @@ export default function EncounterStoryOverlay({
             </div>
           </div>
 
-          {/* 履歴切り替え */}
+          {/* 下中央のページ表示だけ残す */}
           {items.length > 1 && (
             <div
               style={{
                 position: "absolute",
                 left: 0,
                 right: 0,
-                bottom: 10,
+                bottom: 2,
                 zIndex: 1,
-                padding: "0 16px 0 16px",
-                display: "grid",
-                gap: 8,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                pointerEvents: "none",
               }}
             >
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => canPrev && onChangeIndex(currentIndex - 1)}
-                  disabled={!canPrev}
-                  style={{
-                    flex: 1,
-                    padding: "12px 14px",
-                    borderRadius: 14,
-                    border: "none",
-                    background: canPrev
-                      ? "rgba(255,255,255,0.14)"
-                      : "rgba(255,255,255,0.06)",
-                    color: canPrev ? "white" : "rgba(255,255,255,0.4)",
-                    fontWeight: 900,
-                  }}
-                >
-                  ← 新しい
-                </button>
-
-                <div
-                  style={{
-                    minWidth: 86,
-                    textAlign: "center",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: "#fde68a",
-                  }}
-                >
-                  {currentIndex === 0
-                    ? "最新の名刺"
-                    : `${currentIndex + 1} / ${items.length}`}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => canNext && onChangeIndex(currentIndex + 1)}
-                  disabled={!canNext}
-                  style={{
-                    flex: 1,
-                    padding: "12px 14px",
-                    borderRadius: 14,
-                    border: "none",
-                    background: canNext
-                      ? "rgba(255,255,255,0.14)"
-                      : "rgba(255,255,255,0.06)",
-                    color: canNext ? "white" : "rgba(255,255,255,0.4)",
-                    fontWeight: 900,
-                  }}
-                >
-                  古い →
-                </button>
-              </div>
-
-              <div
-                style={{
                   textAlign: "center",
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.72)",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: "#fde68a",
+                  textShadow: "0 0 10px rgba(0,0,0,0.28)",
                 }}
               >
-                左右にスワイプして履歴を切り替え
+                {currentIndex === 0
+                  ? "最新の名刺"
+                  : `${currentIndex + 1} / ${items.length}`}
               </div>
             </div>
           )}
