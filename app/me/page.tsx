@@ -130,6 +130,7 @@ export default function MyPage() {
             otherSns: sns.otherSns,
             history: p.history ?? "",
             cardDesign:
+
               p.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
           });
         } else {

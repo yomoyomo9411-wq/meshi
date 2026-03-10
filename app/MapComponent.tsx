@@ -19,6 +19,7 @@ import {
   MessageCircle,
   IdCard,
 } from "lucide-react";
+import { Fragment } from "react";
 
 import { blueShinyStarIcon, yellowShinyStarIcon } from "./MapIcon";
 import EncounterStoryOverlay from "./components/EncounterStoryOverlay";
@@ -547,25 +548,50 @@ export default function MapComponent() {
             )}
 
             {storyOpen &&
-              storyItems.map((item, index) => {
-                const isCurrent = index === storyIndex;
+  storyItems.map((item, index) => {
+    const isCurrent = index === storyIndex;
 
-                return (
-                  <Marker
-                    key={item.id ?? `${item.otherUid}-${index}`}
-                    position={[item.lat, item.lng]}
-                    icon={
-                      isCurrent
-                        ? (yellowShinyStarIcon as L.DivIcon)
-                        : (blueShinyStarIcon as L.DivIcon)
-                    }
-                    zIndexOffset={isCurrent ? 1000 : 500}
-                    eventHandlers={{
-                      click: () => setStoryIndex(index),
-                    }}
-                  />
-                );
-              })}
+    return (
+      <Fragment key={item.id ?? `${item.otherUid}-${index}`}>
+        {isCurrent && (
+          <Marker
+            position={[item.lat, item.lng]}
+            icon={L.divIcon({
+              className: "",
+              html: `
+                <div style="
+                  width:40px;
+                  height:40px;
+                  border-radius:50%;
+                  border:3px solid #fde68a;
+                  box-shadow:
+                    0 0 12px rgba(253,230,138,0.9),
+                    0 0 20px rgba(125,211,252,0.7);
+                    pointer-events:none
+                "></div>
+              `,
+              iconSize: [40, 40],
+              iconAnchor: [20, 20],
+            })}
+            interactive={false}
+          />
+        )}
+
+        <Marker
+          position={[item.lat, item.lng]}
+          icon={
+            item.isLatest
+              ? (yellowShinyStarIcon as L.DivIcon)
+              : (blueShinyStarIcon as L.DivIcon)
+          }
+          zIndexOffset={isCurrent ? 1000 : 500}
+          eventHandlers={{
+            click: () => setStoryIndex(index),
+          }}
+        />
+      </Fragment>
+    );
+  })}
           </MapContainer>
 
           <div
