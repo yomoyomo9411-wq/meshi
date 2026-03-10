@@ -467,19 +467,7 @@ export default function MapComponent() {
             />
 
             <Recenter center={mapCenter} zoom={zoom} offsetY={mapOffsetY} />
-
-            {markerPos && (
-              <Marker position={markerPos} icon={blueShinyStarIcon as L.DivIcon}>
-                {!storyOpen && (
-                  <Popup>
-                    <div style={{ textAlign: "center", fontWeight: 700 }}>
-                      あなた
-                    </div>
-                  </Popup>
-                )}
-              </Marker>
-            )}
-
+            
             {!storyOpen &&
               encounters
                 .filter((item) => {
