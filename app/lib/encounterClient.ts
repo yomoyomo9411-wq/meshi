@@ -9,6 +9,7 @@ import {
   updateDoc,
   where,
   doc,
+  increment, // 🟢 追加：数値を増やすために必要
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { fetchProfile } from "./profileClient";
@@ -34,14 +35,20 @@ export type EncounterDoc = {
   snapshot: EncounterSnapshot;
 };
 
+/**
+ * 交換処理のメイン関数
+ */
 export async function createEncounter(
   ownerUid: string,
   otherUid: string,
   eventName?: string
 ) {
-  const { lat, lng } = await getCurrentPositionWithFallback();
+  
+  // 1. 位置情報と住所の取得
+    const { lat, lng } = await getCurrentPositionStrict(); 
   const address = await reverseGeocode(lat, lng);
 
+  // 2. お互いの最新プロフィールを取得
   const ownerProfile = await fetchProfile(ownerUid);
   const otherProfile = await fetchProfile(otherUid);
 
@@ -61,9 +68,20 @@ export async function createEncounter(
     photoURL: ownerProfile?.photoURL ?? "",
   };
 
+  // 🟢 3. 初回交換チェック (自分から見て相手と過去に接触があるか)
+  const qFirstCheck = query(
+    collection(db, "encounters"),
+    where("ownerUid", "==", ownerUid),
+    where("otherUid", "==", otherUid)
+  );
+  const existingDocs = await getDocs(qFirstCheck);
+  const isFirstTime = existingDocs.empty; // 過去に1件もなければ初回
+
+  // 4. 古い「最新フラグ」を解除
   await clearLatestEncounter(ownerUid, otherUid);
   await clearLatestEncounter(otherUid, ownerUid);
 
+  // 5. 交換履歴を作成 (自分の分)
   await addDoc(collection(db, "encounters"), {
     ownerUid,
     otherUid,
@@ -77,6 +95,7 @@ export async function createEncounter(
     snapshot: snapshotForOwner,
   });
 
+  // 6. 交換履歴を作成 (相手の分)
   await addDoc(collection(db, "encounters"), {
     ownerUid: otherUid,
     otherUid: ownerUid,
@@ -89,7 +108,28 @@ export async function createEncounter(
     isUnread: true,
     snapshot: snapshotForOther,
   });
+
+  // 🟢 7. 初回交換なら、お互いのトロフィーカウントを +1 する
+  if (isFirstTime) {
+    // 自分のカウントを増やす
+    const myProfileRef = doc(db, "profiles", ownerUid);
+    await updateDoc(myProfileRef, {
+      count: increment(1)
+    });
+
+    // 相手のカウントを増やす
+    const otherProfileRef = doc(db, "profiles", otherUid);
+    await updateDoc(otherProfileRef, {
+      count: increment(1)
+    });
+    
+    console.log("初回交換のため、トロフィーカウントを更新しました。");
+  } else {
+    console.log("2回目以降の交換のため、カウントは維持します。");
+  }
 }
+
+// --- 以下、既存の補助関数（変更なし） ---
 
 async function clearLatestEncounter(ownerUid: string, otherUid: string) {
   const q = query(
@@ -127,13 +167,11 @@ export async function fetchEncountersByOwner(ownerUid: string) {
   return items;
 }
 
-// 名刺一覧用：相手ごとの最新1件だけ
 export async function fetchLatestCardsByOwner(ownerUid: string) {
   const all = await fetchEncountersByOwner(ownerUid);
   return all.filter((item) => item.isLatest === true);
 }
 
-// 相手ごとの履歴一覧
 export async function fetchEncounterHistoryByOwnerAndOther(
   ownerUid: string,
   otherUid: string
@@ -183,18 +221,20 @@ export async function updateEncounterEventName(
   });
 }
 
-async function getCurrentPositionWithFallback(): Promise<{
+/**
+ * 位置情報を厳格に取得する関数
+ * 取得できない場合はエラーを投げて処理を中断させます
+ */
+async function getCurrentPositionStrict(): Promise<{
   lat: number;
   lng: number;
 }> {
-  const fallback = {
-    lat: 36.706,
-    lng: 137.213,
-  };
+  // ブラウザが位置情報に対応していない場合
+  if (!("geolocation" in navigator)) {
+    throw new Error("LOCATION_ERROR");
+  }
 
-  if (!("geolocation" in navigator)) return fallback;
-
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         resolve({
@@ -202,11 +242,15 @@ async function getCurrentPositionWithFallback(): Promise<{
           lng: pos.coords.longitude,
         });
       },
-      () => resolve(fallback),
+      (error) => {
+        // 🟢 取得失敗時は fallback を返さず、エラーを投げる
+        console.error("位置情報の取得に失敗しました:", error);
+        reject(new Error("LOCATION_ERROR"));
+      },
       {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 0,
+        enableHighAccuracy: true, // 高精度
+        timeout: 8000,            // 8秒待ってダメならタイムアウト
+        maximumAge: 0,            // キャッシュを使わない
       }
     );
   });

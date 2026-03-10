@@ -203,6 +203,7 @@ export default function EncounterStoryOverlay({
               padding: "16px 12px 0 18px",
             }}
           >
+            {/*
             {eventLabel ? (
               <div
                 style={{
@@ -223,7 +224,7 @@ export default function EncounterStoryOverlay({
             ) : (
               <div />
             )}
-          
+          */}
 
             <button
               type="button"
