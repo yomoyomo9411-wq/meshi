@@ -33,8 +33,6 @@ import {
 
 import { collection, onSnapshot } from "firebase/firestore";
 
-const INITIAL_CENTER: [number, number] = [36.706, 137.213];
-
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
 
 function Recenter({
@@ -62,16 +60,26 @@ function Recenter({
 
 export default function MapComponent() {
   const router = useRouter();
+    useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      () => {},
+      () => {
+        alert("位置情報が取得できませんでした");
+        router.back();
+      }
+    );
+  }, [router]);
   const searchParams = useSearchParams();
 
   const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [encounters, setEncounters] = useState<any[]>([]);
 
-  const [center, setCenter] = useState<[number, number]>(INITIAL_CENTER);
+  const [center, setCenter] = useState<[number, number] | null>(null);
   const [markerPos, setMarkerPos] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState("現在地を取得中…");
   const [isLocationError, setIsLocationError] = useState(false);
+  const [locationReady, setLocationReady] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
 
   const [storyOpen, setStoryOpen] = useState(false);
@@ -130,25 +138,23 @@ export default function MapComponent() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const latlng: [number, number] = [
-          pos.coords.latitude,
-          pos.coords.longitude,
-        ];
-
-        setCenter(latlng);
-        setMarkerPos(latlng);
-        setStatus("現在地を表示中");
-        setIsLocationError(false);
-      },
-      (err) => {
-        console.error(err);
-        setStatus("位置情報が取得できませんでした。");
-        setIsLocationError(true);
-        setMarkerPos(null);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+  (pos) => {
+    const latlng: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+    setCenter(latlng);
+    setMarkerPos(latlng);
+    setStatus("現在地を表示中");
+    setIsLocationError(false);
+    setLocationReady(true); // ←追加
+  },
+  (err) => {
+    console.error(err);
+    setStatus("位置情報が取得できませんでした。");
+    setIsLocationError(true);
+    setMarkerPos(null);
+    setLocationReady(true); // ←追加
+  },
+  { enableHighAccuracy: true, timeout: 8000 }
+);
   };
 
   useEffect(() => {
@@ -214,12 +220,12 @@ export default function MapComponent() {
 
   const currentStoryItem = storyItems[storyIndex] ?? null;
 
-  const mapCenter = useMemo<[number, number]>(() => {
-    if (storyOpen && currentStoryItem) {
-      return [currentStoryItem.lat, currentStoryItem.lng];
-    }
-    return center;
-  }, [storyOpen, currentStoryItem, center]);
+  const mapCenter = useMemo<[number, number] | null>(() => {
+  if (storyOpen && currentStoryItem) {
+    return [currentStoryItem.lat, currentStoryItem.lng];
+  }
+  return center ?? null; // null も許容
+}, [storyOpen, currentStoryItem, center]);
 
   const mapOffsetY = useMemo(() => {
     if (!storyOpen) return 0;
@@ -466,140 +472,170 @@ export default function MapComponent() {
         }}
       >
         <div style={{ flex: 1, position: "relative", width: "100%" }}>
-          <MapContainer
-            center={mapCenter}
-            zoom={zoom}
-            style={{ height: "100%", width: "100%", zIndex: 0 }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
-              url="https://{s}.tile.jawg.io/jawg-dark/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP"
+          {!locationReady && (
+  <div
+    style={{
+      height: "100%",
+      display: "grid",
+      placeItems: "center",
+      color: "white",
+      fontSize: 16,
+      fontWeight: 700,
+    }}
+  >
+    {isLocationError
+      ? "位置情報が取得できませんでした"
+      : "位置情報を取得しています…"}
+  </div>
+)}
+          {locationReady && mapCenter ? (
+  <MapContainer
+    center={mapCenter}
+    zoom={zoom}
+    style={{ height: "100%", width: "100%", zIndex: 0 }}
+  >
+    <TileLayer
+      attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
+      url="https://{s}.tile.jawg.io/jawg-dark/{z}/{x}/{y}{r}.png?access-token=NHWvUktBDK3kzJjFz7kRdQH1LCdExfAWu2A3Z7IhtcZIH68tQsv9PUk517dyDtPP"
+    />
+
+    <Recenter center={mapCenter} zoom={zoom} offsetY={mapOffsetY} />
+
+    {!storyOpen &&
+      encounters
+        .filter((item) => {
+          const lat = Number(item?.lat);
+          const lng = Number(item?.lng);
+          return Number.isFinite(lat) && Number.isFinite(lng);
+        })
+        .map((item) => {
+          const lat = Number(item.lat);
+          const lng = Number(item.lng);
+
+          const id = String(item.id || "0");
+          const n1 = parseInt(id.slice(-2), 16);
+          const n2 = parseInt(id.slice(-3), 16);
+
+          const latOffset =
+            ((Number.isFinite(n1) ? n1 : 0) % 10 - 5) * 0.00003;
+          const lngOffset =
+            ((Number.isFinite(n2) ? n2 : 0) % 10 - 5) * 0.00003;
+
+          return (
+            <Marker
+              key={item.id}
+              position={[lat + latOffset, lng + lngOffset]}
+              icon={
+                item.isLatest
+                  ? (yellowShinyStarIcon as L.DivIcon)
+                  : (blueShinyStarIcon as L.DivIcon)
+              }
+              eventHandlers={{
+                click: () => {
+                  void openStoryFromEncounter(item);
+                },
+              }}
             />
+          );
+        })}
 
-            <Recenter center={mapCenter} zoom={zoom} offsetY={mapOffsetY} />
-
-            {!storyOpen &&
-              encounters
-                .filter((item) => {
-                  const lat = Number(item?.lat);
-                  const lng = Number(item?.lng);
-                  return Number.isFinite(lat) && Number.isFinite(lng);
-                })
-                .map((item) => {
-                  const lat = Number(item.lat);
-                  const lng = Number(item.lng);
-
-                  const id = String(item.id || "0");
-                  const n1 = parseInt(id.slice(-2), 16);
-                  const n2 = parseInt(id.slice(-3), 16);
-
-                  const latOffset =
-                    ((Number.isFinite(n1) ? n1 : 0) % 10 - 5) * 0.00003;
-                  const lngOffset =
-                    ((Number.isFinite(n2) ? n2 : 0) % 10 - 5) * 0.00003;
-
-                  return (
-                    <Marker
-                      key={item.id}
-                      position={[lat + latOffset, lng + lngOffset]}
-                      icon={
-                        item.isLatest
-                          ? (yellowShinyStarIcon as L.DivIcon)
-                          : (blueShinyStarIcon as L.DivIcon)
-                      }
-                      eventHandlers={{
-                        click: () => {
-                          void openStoryFromEncounter(item);
-                        },
-                      }}
-                    />
-                  );
-                })}
-
-            {storyOpen && currentLinePositions.length >= 2 && (
-              <>
-                <Polyline
-                  positions={currentLinePositions}
-                  pathOptions={{
-                    color: "rgba(253, 230, 138, 0.18)",
-                    weight: 18,
-                    opacity: 1,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  }}
-                />
-
-                <Polyline
-                  positions={currentLinePositions}
-                  pathOptions={{
-                    color: "rgba(125, 211, 252, 0.28)",
-                    weight: 10,
-                    opacity: 1,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  }}
-                />
-
-                <Polyline
-                  positions={currentLinePositions}
-                  pathOptions={{
-                    color: "#fde68a",
-                    weight: 4,
-                    opacity: 0.98,
-                    lineCap: "round",
-                    lineJoin: "round",
-                  }}
-                />
-              </>
-            )}
-
-            {storyOpen &&
-  storyItems.map((item, index) => {
-    const isCurrent = index === storyIndex;
-
-    return (
-      <Fragment key={item.id ?? `${item.otherUid}-${index}`}>
-        {isCurrent && (
-          <Marker
-            position={[item.lat, item.lng]}
-            icon={L.divIcon({
-              className: "",
-              html: `
-                <div style="
-                  width:40px;
-                  height:40px;
-                  border-radius:50%;
-                  border:3px solid #fde68a;
-                  box-shadow:
-                    0 0 12px rgba(253,230,138,0.9),
-                    0 0 20px rgba(125,211,252,0.7);
-                    pointer-events:none
-                "></div>
-              `,
-              iconSize: [40, 40],
-              iconAnchor: [20, 20],
-            })}
-            interactive={false}
-          />
-        )}
-
-        <Marker
-          position={[item.lat, item.lng]}
-          icon={
-            item.isLatest
-              ? (yellowShinyStarIcon as L.DivIcon)
-              : (blueShinyStarIcon as L.DivIcon)
-          }
-          zIndexOffset={isCurrent ? 1000 : 500}
-          eventHandlers={{
-            click: () => setStoryIndex(index),
+    {storyOpen && currentLinePositions.length >= 2 && (
+      <>
+        <Polyline
+          positions={currentLinePositions}
+          pathOptions={{
+            color: "rgba(253, 230, 138, 0.18)",
+            weight: 18,
+            opacity: 1,
+            lineCap: "round",
+            lineJoin: "round",
           }}
         />
-      </Fragment>
-    );
-  })}
-          </MapContainer>
+        <Polyline
+          positions={currentLinePositions}
+          pathOptions={{
+            color: "rgba(125, 211, 252, 0.28)",
+            weight: 10,
+            opacity: 1,
+            lineCap: "round",
+            lineJoin: "round",
+          }}
+        />
+        <Polyline
+          positions={currentLinePositions}
+          pathOptions={{
+            color: "#fde68a",
+            weight: 4,
+            opacity: 0.98,
+            lineCap: "round",
+            lineJoin: "round",
+          }}
+        />
+      </>
+    )}
 
+    {storyOpen &&
+      storyItems.map((item, index) => {
+        const isCurrent = index === storyIndex;
+
+        return (
+          <Fragment key={item.id ?? `${item.otherUid}-${index}`}>
+            {isCurrent && (
+              <Marker
+                position={[item.lat, item.lng]}
+                icon={L.divIcon({
+                  className: "",
+                  html: `
+                    <div style="
+                      width:40px;
+                      height:40px;
+                      border-radius:50%;
+                      border:3px solid #fde68a;
+                      box-shadow:
+                        0 0 12px rgba(253,230,138,0.9),
+                        0 0 20px rgba(125,211,252,0.7);
+                        pointer-events:none
+                    "></div>
+                  `,
+                  iconSize: [40, 40],
+                  iconAnchor: [20, 20],
+                })}
+                interactive={false}
+              />
+            )}
+
+            <Marker
+              position={[item.lat, item.lng]}
+              icon={
+                item.isLatest
+                  ? (yellowShinyStarIcon as L.DivIcon)
+                  : (blueShinyStarIcon as L.DivIcon)
+              }
+              zIndexOffset={isCurrent ? 1000 : 500}
+              eventHandlers={{
+                click: () => setStoryIndex(index),
+              }}
+            />
+          </Fragment>
+        );
+      })}
+  </MapContainer>
+) : (
+  <div
+    style={{
+      height: "100%",
+      display: "grid",
+      placeItems: "center",
+      color: "white",
+      fontSize: 16,
+      fontWeight: 700,
+    }}
+  >
+    {isLocationError
+      ? "位置情報が取得できませんでした"
+      : "位置情報を取得しています…"}
+  </div>
+)}
           <div
             style={{
               position: "fixed",
