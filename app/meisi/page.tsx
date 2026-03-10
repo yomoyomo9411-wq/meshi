@@ -305,13 +305,6 @@ export default function MeisiPage() {
     fontWeight: 800,
     opacity: 1,
     color: "#fde68a",
-    textShadow: `
-      0 0 6px rgba(255,255,255,0.95),
-      0 0 12px rgba(255,255,255,0.85),
-      0 0 18px rgba(253,230,138,0.75),
-      0 0 28px rgba(125,211,252,0.55),
-      0 0 40px rgba(168,85,247,0.45)
-    `,
   };
 
   const iconStyle: React.CSSProperties = {
