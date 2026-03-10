@@ -13,8 +13,8 @@ import {
   Instagram,
   Twitter,
   Github,
+  Link as LinkIcon,
 } from "lucide-react";
-import { FaInstagram, FaXTwitter, FaLink } from "react-icons/fa6";
 
 import { auth } from "../lib/firebase";
 import {
@@ -34,32 +34,13 @@ const defaultProfile: ProfileDoc & { cardDesign: CardDesignType } = {
 
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
 
-function parseSns(raw?: string) {
-  if (!raw?.trim()) {
-    return {
-      instagram: "",
-      x: "",
-      otherSns: "",
-    };
-  }
+type SnsItem = {
+  href: string;
+  label: string;
+  icon: typeof Instagram;
+};
 
-  try {
-    const parsed = JSON.parse(raw);
-    return {
-      instagram: parsed?.instagram ?? "",
-      x: parsed?.x ?? "",
-      otherSns: parsed?.otherSns ?? "",
-    };
-  } catch {
-    return {
-      instagram: "",
-      x: "",
-      otherSns: raw ?? "",
-    };
-  }
-}
-
-function buildHref(value: string) {
+function normalizeHref(value: string) {
   const s = value.trim();
   if (!s) return "";
   if (s.startsWith("http://") || s.startsWith("https://")) return s;
@@ -88,41 +69,61 @@ export default function MeisiPage() {
     [profile.name]
   );
 
-  const snsLinks = useMemo(() => {
-    const parsed = parseSns(profile.sns ?? "");
+  const snsLinks = useMemo<SnsItem[]>(() => {
+    return (profile.sns ?? "")
+      .split(/\n|,/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((raw) => {
+        const href = normalizeHref(raw);
+        if (!href) return null;
 
-    return [
-      {
-        label: "Instagram",
-        value: parsed.instagram,
-        href: buildHref(parsed.instagram),
-        icon: Instagram,
-      },
-      {
-        label: "X",
-        value: parsed.x,
-        href: buildHref(parsed.x),
-        icon: Twitter,
-      },
-      {
-        label: "GitHub",
-        value: parsed.otherSns,
-        href: buildHref(parsed.otherSns),
-        icon: Github,
-      },
-    ].filter((item) => item.value.trim().length > 0 && item.href);
+        if (href.includes("instagram.com")) {
+          return {
+            href,
+            label: "Instagram",
+            icon: Instagram,
+          };
+        }
+
+        if (href.includes("x.com") || href.includes("twitter.com")) {
+          return {
+            href,
+            label: "X",
+            icon: Twitter,
+          };
+        }
+
+        if (href.includes("github.com")) {
+          return {
+            href,
+            label: "GitHub",
+            icon: Github,
+          };
+        }
+
+        return {
+          href,
+          label: "Link",
+          icon: LinkIcon,
+        };
+      })
+      .filter(Boolean) as SnsItem[];
   }, [profile.sns]);
 
   const loadFromFirestore = async (uid: string) => {
     setErrorMsg("");
     setLoadingProfile(true);
+
     try {
       const p = await fetchProfile(uid);
+
       if (!p) {
         setProfile(defaultProfile);
         setErrorMsg("プロフィールが見つかりませんでした。編集画面で保存してください。");
         return;
       }
+
       setProfile({
         ...defaultProfile,
         ...p,
@@ -198,30 +199,6 @@ export default function MeisiPage() {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [user]);
-
-  const snsLinks = useMemo(() => {
-    return (profile.sns ?? "")
-      .split(/\n|,/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((s) => {
-        const href =
-          s.startsWith("http://") || s.startsWith("https://")
-            ? s
-            : s.includes(".")
-            ? `https://${s}`
-            : "";
-
-        if (!href) return null;
-
-        let type: "instagram" | "x" | "other" = "other";
-        if (href.includes("instagram.com")) type = "instagram";
-        if (href.includes("x.com") || href.includes("twitter.com")) type = "x";
-
-        return { href, type };
-      })
-      .filter(Boolean) as { href: string; type: "instagram" | "x" | "other" }[];
-  }, [profile.sns]);
 
   const showLoading = !loadedAuth || loadingProfile;
 
@@ -738,41 +715,6 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "56.5%",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "76%",
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                {snsLinks.map((item, index) => {
-                  let icon = <FaLink size={20} />;
-                  if (item.type === "instagram") icon = <FaInstagram size={20} />;
-                  if (item.type === "x") icon = <FaXTwitter size={20} />;
-
-                  return (
-                    <a
-                      key={`${item.href}-${index}`}
-                      href={item.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 999,
-                        display: "grid",
-                        placeItems: "center",
-                        background: "rgba(255,255,255,0.82)",
-                        color: "#1f2937",
-                        textDecoration: "none",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-                      }}
-                      title={item.href}
-                    >
-                      {icon}
                   top: "47.3%",
                   left: "50%",
                   transform: "translateX(-50%)",
@@ -788,7 +730,7 @@ export default function MeisiPage() {
 
                   return (
                     <a
-                      key={item.label}
+                      key={`${item.label}-${item.href}`}
                       href={item.href}
                       target="_blank"
                       rel="noreferrer"
@@ -842,13 +784,6 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "64%",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "76%",
-                  textAlign: "center",
-                  fontSize: "clamp(10px, 1.8vw, 15px)",
-                  lineHeight: 1.45,
                   top: "60.2%",
                   left: "8%",
                   width: "84%",
@@ -1033,8 +968,14 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "home")}
           {...pressHandlers("home")}
         >
-          <Home size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "home")} />
-          <span style={getPressedLabelStyle(false, pressedTab === "home")}>ホーム</span>
+          <Home
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "home")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "home")}>
+            ホーム
+          </span>
         </button>
 
         <button
@@ -1042,8 +983,14 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "cards")}
           {...pressHandlers("cards")}
         >
-          <CreditCard size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "cards")} />
-          <span style={getPressedLabelStyle(false, pressedTab === "cards")}>名刺一覧</span>
+          <CreditCard
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "cards")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "cards")}>
+            名刺一覧
+          </span>
         </button>
 
         <button
@@ -1051,8 +998,14 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "scan")}
           {...pressHandlers("scan")}
         >
-          <QrCode size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "scan")} />
-          <span style={getPressedLabelStyle(false, pressedTab === "scan")}>交換</span>
+          <QrCode
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "scan")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "scan")}>
+            交換
+          </span>
         </button>
 
         <button
@@ -1060,8 +1013,14 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "chat")}
           {...pressHandlers("chat")}
         >
-          <MessageCircle size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "chat")} />
-          <span style={getPressedLabelStyle(false, pressedTab === "chat")}>チャット</span>
+          <MessageCircle
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(false, pressedTab === "chat")}
+          />
+          <span style={getPressedLabelStyle(false, pressedTab === "chat")}>
+            チャット
+          </span>
         </button>
 
         <button
@@ -1069,8 +1028,14 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(true, pressedTab === "meisi")}
           {...pressHandlers("meisi")}
         >
-          <IdCard size={20} strokeWidth={2.2} style={getPressedIconStyle(true, pressedTab === "meisi")} />
-          <span style={getPressedLabelStyle(true, pressedTab === "meisi")}>My名刺</span>
+          <IdCard
+            size={20}
+            strokeWidth={2.2}
+            style={getPressedIconStyle(true, pressedTab === "meisi")}
+          />
+          <span style={getPressedLabelStyle(true, pressedTab === "meisi")}>
+            My名刺
+          </span>
         </button>
       </div>
     </div>
