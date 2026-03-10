@@ -548,6 +548,7 @@ export default function MyPage() {
                 <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6 }}>
                   名前（必須）
                 </div>
+
                 <input
                   value={profile.name}
                   onChange={(e) =>
