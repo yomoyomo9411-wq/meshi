@@ -493,33 +493,34 @@ export default function EncounterStoryOverlay({
               }}
             >
               <div
-                style={{
-  textAlign: "center",
-  fontSize: 13,
-  fontWeight: 800,
-  color: "#fde68a",
-  padding: "4px 12px",
-  borderRadius: 999,
+  style={{
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: 800,
+    color: currentIndex === 0 ? "#fde68a" : "#ffffff", // ← NEW! は黄色、それ以外は黒
+    padding: "4px 12px",
+    borderRadius: 999,
 
-  background: "rgba(0,0,0,0.45)",
+    background: "rgba(0,0,0,0.45)",
 
-  backdropFilter: "blur(10px)",
-  WebkitBackdropFilter: "blur(10px)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
 
-  border: "1px solid rgba(255,255,255,0.25)",
+    border: "1px solid rgba(255,255,255,0.25)",
 
-  textShadow: "0 0 8px rgba(253,230,138,0.6)",
-
-  boxShadow: `
-    inset 0 1px 0 rgba(255,255,255,0.2),
-    0 6px 16px rgba(0,0,0,0.4)
-  `,
-}}
-              >
-                {currentIndex === 0
-                  ? "NEW!"
-                  : `${currentIndex + 1} / ${items.length}`}
-              </div>
+    textShadow: currentIndex === 0
+      ? "0 0 8px rgba(253,230,138,0.6)"
+      : "none", // NEW! のときだけ光らせる
+    boxShadow: `
+      inset 0 1px 0 rgba(255,255,255,0.2),
+      0 6px 16px rgba(0,0,0,0.4)
+    `,
+  }}
+>
+  {currentIndex === 0
+    ? "NEW!"
+    : `${currentIndex + 1} / ${items.length}`}
+</div>
             </div>
           )}
         </div>
