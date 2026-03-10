@@ -43,8 +43,9 @@ export async function createEncounter(
   otherUid: string,
   eventName?: string
 ) {
+  
   // 1. 位置情報と住所の取得
-  const { lat, lng } = await getCurrentPositionWithFallback();
+    const { lat, lng } = await getCurrentPositionStrict(); 
   const address = await reverseGeocode(lat, lng);
 
   // 2. お互いの最新プロフィールを取得
@@ -220,18 +221,20 @@ export async function updateEncounterEventName(
   });
 }
 
-async function getCurrentPositionWithFallback(): Promise<{
+/**
+ * 位置情報を厳格に取得する関数
+ * 取得できない場合はエラーを投げて処理を中断させます
+ */
+async function getCurrentPositionStrict(): Promise<{
   lat: number;
   lng: number;
 }> {
-  const fallback = {
-    lat: 36.706,
-    lng: 137.213,
-  };
+  // ブラウザが位置情報に対応していない場合
+  if (!("geolocation" in navigator)) {
+    throw new Error("LOCATION_ERROR");
+  }
 
-  if (!("geolocation" in navigator)) return fallback;
-
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         resolve({
@@ -239,11 +242,15 @@ async function getCurrentPositionWithFallback(): Promise<{
           lng: pos.coords.longitude,
         });
       },
-      () => resolve(fallback),
+      (error) => {
+        // 🟢 取得失敗時は fallback を返さず、エラーを投げる
+        console.error("位置情報の取得に失敗しました:", error);
+        reject(new Error("LOCATION_ERROR"));
+      },
       {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 0,
+        enableHighAccuracy: true, // 高精度
+        timeout: 8000,            // 8秒待ってダメならタイムアウト
+        maximumAge: 0,            // キャッシュを使わない
       }
     );
   });
