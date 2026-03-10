@@ -190,16 +190,34 @@ export default function EncounterStoryOverlay({
             }}
           />
 
-          {/* 閉じるボタンだけ残す */}
+          {/* イベント名 + 閉じるボタン */}
           <div
             style={{
               position: "relative",
               zIndex: 1,
               display: "flex",
-              justifyContent: "flex-end",
+              alignItems: "center",
+              justifyContent: "space-between",
               padding: "16px 12px 0 18px",
             }}
           >
+            <div
+              style={{
+                maxWidth: "72%",
+                fontWeight: 900,
+                fontSize: 15,
+                color: "#fde68a",
+                letterSpacing: "0.02em",
+                lineHeight: 1.2,
+                textShadow: "0 0 10px rgba(0,0,0,0.25)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {current.eventName?.trim() || ""}
+            </div>
+
             <button
               type="button"
               onClick={onClose}

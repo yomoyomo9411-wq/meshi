@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { Html5Qrcode } from "html5-qrcode";
@@ -10,6 +10,9 @@ import {
   QrCode,
   MessageCircle,
   IdCard,
+  Instagram,
+  Twitter,
+  Link2,
 } from "lucide-react";
 
 import { auth } from "../lib/firebase";
@@ -26,6 +29,39 @@ const defaultProfile: ProfileDoc = {
 
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
 
+function parseSns(raw?: string) {
+  if (!raw?.trim()) {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      instagram: parsed?.instagram ?? "",
+      x: parsed?.x ?? "",
+      otherSns: parsed?.otherSns ?? "",
+    };
+  } catch {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: raw ?? "",
+    };
+  }
+}
+
+function buildHref(value: string) {
+  const s = value.trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.includes(".")) return `https://${s}`;
+  return "";
+}
+
 export default function ScanPage() {
   const router = useRouter();
 
@@ -36,6 +72,7 @@ export default function ScanPage() {
   const [scannedProfile, setScannedProfile] =
     useState<ProfileDoc>(defaultProfile);
 
+  const [eventName, setEventName] = useState("");
   const [saving, setSaving] = useState(false);
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
@@ -43,6 +80,31 @@ export default function ScanPage() {
   const hasScannedRef = useRef(false);
 
   const readerId = "qr-reader-box";
+
+  const snsLinks = useMemo(() => {
+    const parsed = parseSns(scannedProfile.sns ?? "");
+
+    return [
+      {
+        label: "Instagram",
+        value: parsed.instagram,
+        href: buildHref(parsed.instagram),
+        icon: Instagram,
+      },
+      {
+        label: "X",
+        value: parsed.x,
+        href: buildHref(parsed.x),
+        icon: Twitter,
+      },
+      {
+        label: "その他SNS",
+        value: parsed.otherSns,
+        href: buildHref(parsed.otherSns),
+        icon: Link2,
+      },
+    ].filter((item) => item.value.trim().length > 0 && item.href);
+  }, [scannedProfile.sns]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -180,7 +242,7 @@ export default function ScanPage() {
 
       setStatus("交換情報を保存しています…");
 
-      await createEncounter(user.uid, scannedUid);
+      await createEncounter(user.uid, scannedUid, eventName.trim());
 
       setStatus("交換完了！名刺一覧に追加しました。");
 
@@ -447,7 +509,7 @@ export default function ScanPage() {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          justifyContent: scannedUid ? "center" : "flex-start",
           padding: 16,
           paddingBottom: 128,
           position: "relative",
@@ -498,79 +560,232 @@ export default function ScanPage() {
         ) : (
           <div
             style={{
-              marginTop: 16,
-              borderRadius: 18,
-              padding: 16,
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.10)",
+              marginTop: 20,
               display: "grid",
-              gap: 14,
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
+              placeItems: "center",
+              gap: 16,
             }}
           >
-            <div style={{ fontWeight: 900, fontSize: 18 }}>
+            <div style={{ fontWeight: 900, fontSize: 18, width: "100%" }}>
               交換相手の名刺
             </div>
 
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <div
-                style={{
-                  width: 76,
-                  height: 76,
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  background: "rgba(255,255,255,0.10)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
-                }}
-              >
-                {scannedProfile.photoURL ? (
-                  <img
-                    src={scannedProfile.photoURL}
-                    alt="profile"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      display: "block",
-                    }}
-                  />
-                ) : (
-                  <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
-                )}
+            <div
+              style={{
+                width: "min(92vw, 420px)",
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 800, opacity: 0.95 }}>
+                イベント
               </div>
 
-              <div>
-                <div style={{ fontWeight: 900, fontSize: 18 }}>
+              <input
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+                placeholder="例）ハッカソン / 富山市のカフェ / 学園祭（15文字以内）"
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "white",
+                  outline: "none",
+                  fontSize: 14,
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                placeItems: "center",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: "min(92vw, 420px)",
+                  filter: "drop-shadow(0 12px 34px rgba(0,0,0,0.38))",
+                }}
+              >
+                <img
+                  src="/card-base.png"
+                  alt="card-base"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    display: "block",
+                    borderRadius: 24,
+                  }}
+                />
+
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "13.2%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "23.8%",
+                    aspectRatio: "1 / 1",
+                    borderRadius: "999px",
+                    overflow: "hidden",
+                    background: "#241672",
+                    boxShadow:
+                      "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)",
+                  }}
+                >
+                  {scannedProfile.photoURL ? (
+                    <img
+                      src={scannedProfile.photoURL}
+                      alt="profile"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : null}
+                </div>
+
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "31.8%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "78%",
+                    textAlign: "center",
+                    color: "#22196f",
+                    fontWeight: 900,
+                    fontSize: "clamp(26px, 5vw, 42px)",
+                    letterSpacing: "0.04em",
+                    lineHeight: 1.1,
+                  }}
+                >
                   {scannedProfile.name || "名前未設定"}
                 </div>
 
-                <div style={{ opacity: 0.85, marginTop: 4 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "39.9%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "74%",
+                    textAlign: "center",
+                    color: "#1f174d",
+                    fontWeight: 600,
+                    fontSize: "clamp(9px, 1.7vw, 15px)",
+                    lineHeight: 1.24,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
                   {scannedProfile.affiliation || "所属未設定"}
+                </div>
+
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "47.3%",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: "74%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "flex-start",
+                    gap: 16,
+                  }}
+                >
+                  {snsLinks.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={item.label}
+                        title={item.label}
+                        style={{
+                          width: 58,
+                          textDecoration: "none",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "flex-start",
+                          gap: 4,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: "999px",
+                            display: "grid",
+                            placeItems: "center",
+                            background: "rgba(255,255,255,0.72)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.14)",
+                          }}
+                        >
+                          <Icon
+                            size={18}
+                            strokeWidth={2.2}
+                            style={{ color: "#374151" }}
+                          />
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: "clamp(8px, 1.25vw, 10px)",
+                            lineHeight: 1.15,
+                            fontWeight: 700,
+                            color: "#4b5563",
+                            textAlign: "center",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.label}
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "60.2%",
+                    left: "8%",
+                    width: "84%",
+                    paddingRight: "21%",
+                    boxSizing: "border-box",
+                    textAlign: "left",
+                    fontSize: "clamp(8.5px, 1.45vw, 12px)",
+                    lineHeight: 1.28,
+                    color: "#4b5563",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {scannedProfile.history || ""}
                 </div>
               </div>
             </div>
 
-            {scannedProfile.history?.trim() && (
-              <div
-                style={{
-                  padding: 12,
-                  borderRadius: 14,
-                  background: "rgba(0,0,0,0.25)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  whiteSpace: "pre-wrap",
-                  lineHeight: 1.5,
-                }}
-              >
-                {scannedProfile.history}
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                width: "min(92vw, 420px)",
+              }}
+            >
               <button
                 onClick={handleSaveEncounter}
                 disabled={saving}

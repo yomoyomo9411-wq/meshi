@@ -26,13 +26,18 @@ export type EncounterDoc = {
   lat: number;
   lng: number;
   address: string;
+  eventName?: string;
   createdAt: any;
   isLatest: boolean;
   isUnread?: boolean;
   snapshot: EncounterSnapshot;
 };
 
-export async function createEncounter(ownerUid: string, otherUid: string) {
+export async function createEncounter(
+  ownerUid: string,
+  otherUid: string,
+  eventName?: string
+) {
   const { lat, lng } = await getCurrentPositionWithFallback();
   const address = await reverseGeocode(lat, lng);
 
@@ -64,6 +69,7 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     lat,
     lng,
     address,
+    eventName: eventName ?? "",
     createdAt: serverTimestamp(),
     isLatest: true,
     isUnread: true,
@@ -76,6 +82,7 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     lat,
     lng,
     address,
+    eventName: eventName ?? "",
     createdAt: serverTimestamp(),
     isLatest: true,
     isUnread: true,
