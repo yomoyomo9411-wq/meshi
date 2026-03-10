@@ -93,6 +93,14 @@ export default function MapComponent() {
   const zoom = 15;
   const handledFocusOtherUidRef = useRef<string | null>(null);
 
+    const getOffsetLatLng = (lat: number, lng: number, id?: string) => {
+    const idStr = id || "0";
+    const n1 = parseInt(idStr.slice(-2), 16);
+    const n2 = parseInt(idStr.slice(-3), 16);
+    const latOffset = ((Number.isFinite(n1) ? n1 : 0) % 10 - 5) * 0.00003;
+    const lngOffset = ((Number.isFinite(n2) ? n2 : 0) % 10 - 5) * 0.00003;
+    return [lat + latOffset, lng + lngOffset] as [number, number];
+  };
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -524,7 +532,7 @@ export default function MapComponent() {
           return (
             <Marker
               key={item.id}
-              position={[lat + latOffset, lng + lngOffset]}
+              position={getOffsetLatLng(lat, lng, item.id)}
               icon={
                 item.isLatest
                   ? (yellowShinyStarIcon as L.DivIcon)
@@ -582,7 +590,7 @@ export default function MapComponent() {
           <Fragment key={item.id ?? `${item.otherUid}-${index}`}>
             {isCurrent && (
               <Marker
-                position={[item.lat, item.lng]}
+                position={getOffsetLatLng(item.lat, item.lng, item.id)}
                 icon={L.divIcon({
                   className: "",
                   html: `
@@ -605,7 +613,7 @@ export default function MapComponent() {
             )}
 
             <Marker
-              position={[item.lat, item.lng]}
+              position={getOffsetLatLng(item.lat, item.lng, item.id)}
               icon={
                 item.isLatest
                   ? (yellowShinyStarIcon as L.DivIcon)
