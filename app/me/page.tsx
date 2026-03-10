@@ -595,7 +595,7 @@ export default function MyPage() {
             />
 
             <Field
-              label="その他SNS（自由記入）"
+              label="GitHub（自由記入）"
               value={profile.otherSns}
               onChange={(v) => setProfile((p) => ({ ...p, otherSns: v }))}
               placeholder="例）https://github.com/xxxx"
