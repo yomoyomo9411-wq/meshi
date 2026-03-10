@@ -18,6 +18,7 @@ import {
   QrCode,
   MessageCircle,
   IdCard,
+  LocateFixed,
 } from "lucide-react";
 import { Fragment } from "react";
 
@@ -672,19 +673,45 @@ export default function MapComponent() {
               style={{
                 position: "fixed",
                 bottom: 110,
-                right: 16,
+                right: 20,
                 zIndex: 2000,
-                padding: "12px 18px",
-                borderRadius: 999,
-                border: "none",
-                background: isLocationError ? "#dc2626" : "#2563eb",
-                color: "white",
-                fontWeight: 700,
-                boxShadow: "0 4px 15px rgba(0,0,0,0.4)",
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                display: "grid",
+                placeItems: "center",
                 cursor: "pointer",
+                
+                // 1. 外枠を完全に消去
+                border: "none",
+                outline: "none",
+                
+                // 2. 背景：白に近く、かつ透明感のある上品な色（アイスホワイト）
+                background: "rgba(255, 255, 255, 0.15)", 
+                
+                // 3. 背景をボカして下の地図を透かす（これがオシャレのポイントです）
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                
+                // 4. 影：外枠の代わりに「柔らかな影」だけで存在感を出します
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                
+                transition: "all 0.2s ease",
               }}
+              // 押し心地の演出
+              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.92)")}
+              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              {isLocationError ? "再試行" : "現在地へ"}
+              <LocateFixed 
+                size={26} 
+                // イラストは「鮮やかできれいな青色」
+                color="#3b82f6" 
+                strokeWidth={2.5}
+                style={{
+                  // イラスト自体を光らせて星空に馴染ませる
+                  filter: "drop-shadow(0 0 8px rgba(59, 130, 246, 0.8))"
+                }}
+              />
             </button>
           )}
 
