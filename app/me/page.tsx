@@ -25,7 +25,9 @@ type Profile = {
   photoURL: string;
   name: string;
   affiliation: string;
-  sns: string;
+  instagram: string;
+  x: string;
+  otherSns: string;
   history: string;
   cardDesign: CardDesignType;
 };
@@ -36,7 +38,9 @@ const defaultProfile: Profile = {
   photoURL: "",
   name: "",
   affiliation: "",
-  sns: "",
+  instagram: "",
+  x: "",
+  otherSns: "",
   history: "",
   cardDesign: "card-base",
 };
@@ -49,6 +53,38 @@ const cardDesignOptions: {
   { key: "card-base", src: "/card-base.png", label: "デザイン1" },
   { key: "cars-base2", src: "/cars-base2.png", label: "デザイン2" },
 ];
+function parseSns(raw?: string) {
+  if (!raw?.trim()) {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      instagram: parsed?.instagram ?? "",
+      x: parsed?.x ?? "",
+      otherSns: parsed?.otherSns ?? "",
+    };
+  } catch {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: raw ?? "",
+    };
+  }
+}
+
+function buildSnsString(profile: Profile) {
+  return JSON.stringify({
+    instagram: profile.instagram.trim(),
+    x: profile.x.trim(),
+    otherSns: profile.otherSns.trim(),
+  });
+}
 
 export default function MyPage() {
   const router = useRouter();
@@ -84,11 +120,14 @@ export default function MyPage() {
       try {
         const p = await fetchProfile(u.uid);
         if (p) {
+          const sns = parseSns(p.sns ?? "");
           setProfile({
             photoURL: p.photoURL ?? "",
             name: p.name ?? "",
             affiliation: p.affiliation ?? "",
-            sns: p.sns ?? "",
+            instagram: sns.instagram,
+            x: sns.x,
+            otherSns: sns.otherSns,
             history: p.history ?? "",
             cardDesign:
               p.cardDesign === "card-base2" ? "card-base2" : "card-base",
@@ -126,7 +165,7 @@ export default function MyPage() {
       photoURL: profile.photoURL,
       name: profile.name.trim(),
       affiliation: profile.affiliation.trim(),
-      sns: profile.sns.trim(),
+      sns: buildSnsString(profile),
       history: profile.history.trim(),
       cardDesign: profile.cardDesign,
     };
@@ -513,6 +552,7 @@ export default function MyPage() {
                 <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6 }}>
                   名前（必須）
                 </div>
+
                 <input
                   value={profile.name}
                   onChange={(e) =>
@@ -550,6 +590,24 @@ export default function MyPage() {
               value={profile.sns}
               onChange={(v) => setProfile((p) => ({ ...p, sns: v }))}
               placeholder={"例）\nhttps://instagram.com/xxxx\nhttps://x.com/xxxx"}
+              label="Instagram（自由記入）"
+              value={profile.instagram}
+              onChange={(v) => setProfile((p) => ({ ...p, instagram: v }))}
+              placeholder="例）https://instagram.com/xxxx"
+            />
+
+            <Field
+              label="X（自由記入）"
+              value={profile.x}
+              onChange={(v) => setProfile((p) => ({ ...p, x: v }))}
+              placeholder="例）https://x.com/xxxx"
+            />
+
+            <Field
+              label="GitHub（自由記入）"
+              value={profile.otherSns}
+              onChange={(v) => setProfile((p) => ({ ...p, otherSns: v }))}
+              placeholder="例）https://github.com/xxxx"
             />
 
             <TextAreaField

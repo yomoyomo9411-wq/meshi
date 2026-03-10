@@ -23,7 +23,9 @@ export default function ChatListPage() {
   const [user, setUser] = useState<User | null>(null);
   const [people, setPeople] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [unreadMap, setUnreadMap] = useState<Record<string, boolean>>({});
+
+  // ★変更：未読の件数（数字）を保存できるようにしました
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
   useEffect(() => {
@@ -55,28 +57,31 @@ export default function ChatListPage() {
     if (!user) return;
 
     const unsub = onSnapshot(collection(db, "chatRooms"), (snap) => {
-      const map: Record<string, boolean> = {};
+      const map: Record<string, number> = {};
 
       snap.docs.forEach((doc) => {
-        const roomId = doc.id;
+  const roomId = doc.id;
 
-        if (!roomId.includes(user.uid)) return;
+  if (!roomId.includes(user.uid)) return;
 
-        const data = doc.data();
-        const lastMessage = data?.lastMessage;
+  const data = doc.data();
 
-        if (!lastMessage) return;
+  const unreadCount = data?.[`unreadCount_${user.uid}`] ?? 0;
 
-        if (lastMessage.senderUid !== user.uid) {
-          map[roomId] = true;
-        }
-      });
+  if (unreadCount > 0) {
+    map[roomId] = unreadCount;
+  }
+});
 
       setUnreadMap(map);
     });
 
     return () => unsub();
   }, [user]);
+
+  // ★追加：すべての未読数を合計して、1以上なら下メニューに赤ポチを出します
+  const totalUnreadCount = Object.values(unreadMap).reduce((acc, count) => acc + count, 0);
+  const hasUnreadChat = totalUnreadCount > 0;
 
   const navButtonBase: React.CSSProperties = {
     position: "relative",
@@ -328,7 +333,9 @@ export default function ChatListPage() {
         >
           {people.map((item) => {
             const roomId = [user?.uid, item.otherUid].sort().join("__");
-            const unread = unreadMap[roomId];
+            
+            // ★変更：未読の件数を取得
+            const unreadCount = unreadMap[roomId] || 0;
 
             return (
               <button
@@ -351,6 +358,7 @@ export default function ChatListPage() {
                   cursor: "pointer",
                 }}
               >
+                {/* アイコン部分 */}
                 <div
                   style={{
                     width: 56,
@@ -379,27 +387,34 @@ export default function ChatListPage() {
                   ) : (
                     <div style={{ fontWeight: 800 }}>No</div>
                   )}
-
-                  {unread && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: -2,
-                        right: -2,
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        background: "#ef4444",
-                        border: "2px solid #0b1220",
-                        boxShadow: "0 0 10px rgba(239,68,68,0.65)",
-                      }}
-                    />
-                  )}
                 </div>
 
-                <div style={{ fontWeight: 800, fontSize: 16 }}>
+                {/* 名前部分 */}
+                <div style={{ flex: 1, fontWeight: 800, fontSize: 16 }}>
                   {item.snapshot?.name || "名前未設定"}
                 </div>
+
+                {/* ★追加：LINEのような右端の通知バッジ（件数） */}
+                {unreadCount > 0 && (
+                  <div
+                    style={{
+                      background: "#ef4444",
+                      color: "white",
+                      fontSize: 13,
+                      fontWeight: 900,
+                      minWidth: 26,
+                      height: 26,
+                      borderRadius: 13,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 8px",
+                      boxShadow: "0 0 12px rgba(239,68,68,0.65)",
+                    }}
+                  >
+                    {unreadCount}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -538,11 +553,28 @@ export default function ChatListPage() {
           style={getPressedButtonStyle(true, pressedTab === "chat")}
           {...pressHandlers("chat")}
         >
-          <MessageCircle
-            size={20}
-            strokeWidth={2.2}
-            style={getPressedIconStyle(true, pressedTab === "chat")}
-          />
+          {/* ★追加：未読がある時だけ赤ポチを出す */}
+          <div style={{ position: "relative", display: "grid", placeItems: "center" }}>
+            <MessageCircle
+              size={20}
+              strokeWidth={2.2}
+              style={getPressedIconStyle(true, pressedTab === "chat")}
+            />
+            {hasUnreadChat && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -4,
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  boxShadow: "0 0 10px rgba(239,68,68,0.7)",
+                }}
+              />
+            )}
+          </div>
           <span style={getPressedLabelStyle(true, pressedTab === "chat")}>
             チャット
           </span>

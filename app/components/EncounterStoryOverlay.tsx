@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef } from "react";
+import { Instagram, Twitter, Link2 } from "lucide-react";
 import type { EncounterDoc } from "../lib/encounterClient";
 
 type Props = {
@@ -10,6 +11,39 @@ type Props = {
   onChangeIndex: (next: number) => void;
   onClose: () => void;
 };
+
+function parseSns(raw?: string) {
+  if (!raw?.trim()) {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      instagram: parsed?.instagram ?? "",
+      x: parsed?.x ?? "",
+      otherSns: parsed?.otherSns ?? "",
+    };
+  } catch {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: raw ?? "",
+    };
+  }
+}
+
+function buildHref(value: string) {
+  const s = value.trim();
+  if (!s) return "";
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  if (s.includes(".")) return `https://${s}`;
+  return "";
+}
 
 export default function EncounterStoryOverlay({
   open,
@@ -44,11 +78,30 @@ export default function EncounterStoryOverlay({
   const canPrev = currentIndex > 0;
   const canNext = currentIndex < items.length - 1;
 
-  const subtitle = useMemo(() => {
-    if (items.length <= 1) return "この出会いの記録";
-    if (currentIndex === 0) return "最新の出会い";
-    return `${currentIndex + 1}件目 / ${items.length}件`;
-  }, [items.length, currentIndex]);
+  const snsLinks = useMemo(() => {
+    const parsed = parseSns(current?.snapshot?.sns ?? "");
+
+    return [
+      {
+        label: "Instagram",
+        value: parsed.instagram,
+        href: buildHref(parsed.instagram),
+        icon: Instagram,
+      },
+      {
+        label: "X",
+        value: parsed.x,
+        href: buildHref(parsed.x),
+        icon: Twitter,
+      },
+      {
+        label: "その他SNS",
+        value: parsed.otherSns,
+        href: buildHref(parsed.otherSns),
+        icon: Link2,
+      },
+    ].filter((item) => item.value.trim().length > 0 && item.href);
+  }, [current?.snapshot?.sns]);
 
   if (!open || !current) return null;
 
@@ -63,18 +116,18 @@ export default function EncounterStoryOverlay({
 
     const diff = endX - touchStartXRef.current;
 
-    // 左スワイプ -> 古い履歴
     if (diff < -50 && canNext) {
       onChangeIndex(currentIndex + 1);
     }
 
-    // 右スワイプ -> 新しい履歴
     if (diff > 50 && canPrev) {
       onChangeIndex(currentIndex - 1);
     }
 
     touchStartXRef.current = null;
   };
+
+  const eventLabel = current.eventName?.trim() || "";
 
   return (
     <div
@@ -120,7 +173,6 @@ export default function EncounterStoryOverlay({
             border: "1px solid rgba(255,255,255,0.14)",
           }}
         >
-          {/* 星空 */}
           <div
             style={{
               position: "absolute",
@@ -140,7 +192,7 @@ export default function EncounterStoryOverlay({
             }}
           />
 
-          {/* ヘッダー */}
+          {/* イベント名 + 閉じるボタン */}
           <div
             style={{
               position: "relative",
@@ -148,31 +200,29 @@ export default function EncounterStoryOverlay({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "16px 18px 0 18px",
+              padding: "16px 12px 0 18px",
             }}
           >
-            <div>
+            {eventLabel ? (
               <div
                 style={{
+                  maxWidth: "72%",
                   fontWeight: 900,
-                  fontSize: 16,
+                  fontSize: 15,
                   color: "#fde68a",
-                  letterSpacing: "0.04em",
+                  letterSpacing: "0.02em",
+                  lineHeight: 1.2,
+                  textShadow: "0 0 10px rgba(0,0,0,0.25)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                {current.snapshot?.name || "プロフィール"}
+                {eventLabel}
               </div>
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.72)",
-                  fontWeight: 700,
-                }}
-              >
-                {subtitle}
-              </div>
-            </div>
+            ) : (
+              <div />
+            )}
 
             <button
               type="button"
@@ -197,7 +247,7 @@ export default function EncounterStoryOverlay({
           <div
             key={`${current.id ?? "item"}-${currentIndex}`}
             style={{
-              marginTop: 8,
+              marginTop: -8,
               display: "grid",
               placeItems: "center",
               position: "relative",
@@ -209,11 +259,10 @@ export default function EncounterStoryOverlay({
             <div
               style={{
                 position: "relative",
-                width: "min(92vw, 430px)",
+                width: "min(78vw, 370px)",
                 filter: "drop-shadow(0 12px 34px rgba(0,0,0,0.38))",
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/card-base.png"
                 alt="card-base"
@@ -239,8 +288,8 @@ export default function EncounterStoryOverlay({
                   border: "1px solid rgba(255,255,255,0.12)",
                   boxShadow: "0 6px 18px rgba(0,0,0,0.28)",
                   color: "white",
-                  fontSize: "clamp(9px, 1.55vw, 11px)",
-                  lineHeight: 1.45,
+                  fontSize: "clamp(8px, 1.35vw, 10px)",
+                  lineHeight: 1.4,
                   backdropFilter: "blur(6px)",
                   display: "grid",
                   gap: 2,
@@ -249,7 +298,7 @@ export default function EncounterStoryOverlay({
               >
                 <div
                   style={{
-                    fontSize: "clamp(12px, 2vw, 15px)",
+                    fontSize: "clamp(11px, 1.8vw, 14px)",
                     fontWeight: 700,
                   }}
                 >
@@ -270,7 +319,7 @@ export default function EncounterStoryOverlay({
               <div
                 style={{
                   position: "absolute",
-                  top: "15.6%",
+                  top: "13.2%",
                   left: "50%",
                   transform: "translateX(-50%)",
                   width: "23.8%",
@@ -283,7 +332,6 @@ export default function EncounterStoryOverlay({
                 }}
               >
                 {current.snapshot?.photoURL ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={current.snapshot.photoURL}
                     alt="profile"
@@ -300,14 +348,14 @@ export default function EncounterStoryOverlay({
               <div
                 style={{
                   position: "absolute",
-                  top: "35.2%",
+                  top: "31.8%",
                   left: "50%",
                   transform: "translateX(-50%)",
                   width: "78%",
                   textAlign: "center",
                   color: "#22196f",
                   fontWeight: 900,
-                  fontSize: "clamp(26px, 5vw, 42px)",
+                  fontSize: "clamp(22px, 4.1vw, 36px)",
                   letterSpacing: "0.04em",
                   lineHeight: 1.1,
                 }}
@@ -319,49 +367,102 @@ export default function EncounterStoryOverlay({
               <div
                 style={{
                   position: "absolute",
-                  top: "43.2%",
+                  top: "39.9%",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  width: "72%",
+                  width: "74%",
                   textAlign: "center",
                   color: "#1f174d",
                   fontWeight: 600,
-                  fontSize: "clamp(10px, 2vw, 17px)",
-                  lineHeight: 1.35,
+                  fontSize: "clamp(8px, 1.45vw, 13px)",
+                  lineHeight: 1.24,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
                 }}
               >
                 {current.snapshot?.affiliation || "所属未設定"}
               </div>
 
-              {/* SNS */}
+              {/* SNS アイコン */}
               <div
                 style={{
                   position: "absolute",
-                  top: "60%",
+                  top: "47.3%",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  width: "76%",
-                  textAlign: "center",
-                  fontSize: "clamp(11px, 1.9vw, 16px)",
-                  lineHeight: 1.35,
-                  color: "#4b5563",
-                  wordBreak: "break-word",
+                  width: "74%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "flex-start",
+                  gap: 16,
                 }}
               >
-                {current.snapshot?.sns || ""}
+                {snsLinks.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={item.label}
+                      title={item.label}
+                      style={{
+                        width: 58,
+                        textDecoration: "none",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                        gap: 4,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: "999px",
+                          display: "grid",
+                          placeItems: "center",
+                          background: "rgba(255,255,255,0.72)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.14)",
+                        }}
+                      >
+                        <Icon
+                          size={18}
+                          strokeWidth={2.2}
+                          style={{ color: "#374151" }}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: "clamp(8px, 1.1vw, 9px)",
+                          lineHeight: 1.15,
+                          fontWeight: 700,
+                          color: "#4b5563",
+                          textAlign: "center",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
 
               {/* 活動履歴 */}
               <div
                 style={{
                   position: "absolute",
-                  top: "68%",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "76%",
-                  textAlign: "center",
-                  fontSize: "clamp(10px, 1.8vw, 15px)",
-                  lineHeight: 1.45,
+                  top: "60.2%",
+                  left: "8%",
+                  width: "84%",
+                  textAlign: "left",
+                  fontSize: "clamp(7.5px, 1.15vw, 10px)",
+                  lineHeight: 1.24,
                   color: "#4b5563",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
@@ -372,87 +473,33 @@ export default function EncounterStoryOverlay({
             </div>
           </div>
 
-          {/* 履歴切り替え */}
+          {/* 下中央のページ表示だけ残す */}
           {items.length > 1 && (
             <div
               style={{
                 position: "absolute",
                 left: 0,
                 right: 0,
-                bottom: 10,
+                bottom: 2,
                 zIndex: 1,
-                padding: "0 16px 0 16px",
-                display: "grid",
-                gap: 8,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                pointerEvents: "none",
               }}
             >
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => canPrev && onChangeIndex(currentIndex - 1)}
-                  disabled={!canPrev}
-                  style={{
-                    flex: 1,
-                    padding: "12px 14px",
-                    borderRadius: 14,
-                    border: "none",
-                    background: canPrev
-                      ? "rgba(255,255,255,0.14)"
-                      : "rgba(255,255,255,0.06)",
-                    color: canPrev ? "white" : "rgba(255,255,255,0.4)",
-                    fontWeight: 900,
-                  }}
-                >
-                  ← 新しい
-                </button>
-
-                <div
-                  style={{
-                    minWidth: 86,
-                    textAlign: "center",
-                    fontSize: 13,
-                    fontWeight: 800,
-                    color: "#fde68a",
-                  }}
-                >
-                  {currentIndex + 1} / {items.length}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => canNext && onChangeIndex(currentIndex + 1)}
-                  disabled={!canNext}
-                  style={{
-                    flex: 1,
-                    padding: "12px 14px",
-                    borderRadius: 14,
-                    border: "none",
-                    background: canNext
-                      ? "rgba(255,255,255,0.14)"
-                      : "rgba(255,255,255,0.06)",
-                    color: canNext ? "white" : "rgba(255,255,255,0.4)",
-                    fontWeight: 900,
-                  }}
-                >
-                  古い →
-                </button>
-              </div>
-
-              <div
-                style={{
                   textAlign: "center",
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.72)",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: "#fde68a",
+                  textShadow: "0 0 10px rgba(0,0,0,0.28)",
                 }}
               >
-                左右にスワイプして履歴を切り替え
+                {currentIndex === 0
+                  ? "最新の名刺"
+                  : `${currentIndex + 1} / ${items.length}`}
               </div>
             </div>
           )}

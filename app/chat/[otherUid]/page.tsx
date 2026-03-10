@@ -33,9 +33,11 @@ export default function ChatRoomPage() {
   }, [user, otherUid]);
 
   useEffect(() => {
-    if (!user || !roomId) return;
-    markAsRead(roomId, user.uid);
-  }, [messages, roomId, user]);
+  if (!user || !roomId) return;
+
+  markAsRead(roomId, user.uid);
+
+}, [roomId, user]);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (u) => {
@@ -76,15 +78,15 @@ export default function ChatRoomPage() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!user || !roomId || !text.trim()) return;
+  if (!user || !roomId || !text.trim()) return;
 
-    try {
-      await sendMessage(roomId, user.uid, text);
-      setText("");
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  try {
+    await sendMessage(roomId, user.uid, otherUid, text);
+    setText("");
+  } catch (e) {
+    console.error(e);
+  }
+};
 
   return (
     <div

@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   updateDoc,
   where,
+  doc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { fetchProfile } from "./profileClient";
@@ -26,13 +27,18 @@ export type EncounterDoc = {
   lat: number;
   lng: number;
   address: string;
+  eventName?: string;
   createdAt: any;
   isLatest: boolean;
   isUnread?: boolean;
   snapshot: EncounterSnapshot;
 };
 
-export async function createEncounter(ownerUid: string, otherUid: string) {
+export async function createEncounter(
+  ownerUid: string,
+  otherUid: string,
+  eventName?: string
+) {
   const { lat, lng } = await getCurrentPositionWithFallback();
   const address = await reverseGeocode(lat, lng);
 
@@ -64,6 +70,7 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     lat,
     lng,
     address,
+    eventName: eventName ?? "",
     createdAt: serverTimestamp(),
     isLatest: true,
     isUnread: true,
@@ -76,6 +83,7 @@ export async function createEncounter(ownerUid: string, otherUid: string) {
     lat,
     lng,
     address,
+    eventName: eventName ?? "",
     createdAt: serverTimestamp(),
     isLatest: true,
     isUnread: true,
@@ -164,6 +172,15 @@ export async function markEncountersAsRead(ownerUid: string) {
   for (const docSnap of result.docs) {
     await updateDoc(docSnap.ref, { isUnread: false });
   }
+}
+
+export async function updateEncounterEventName(
+  encounterId: string,
+  eventName: string
+) {
+  await updateDoc(doc(db, "encounters", encounterId), {
+    eventName,
+  });
 }
 
 async function getCurrentPositionWithFallback(): Promise<{

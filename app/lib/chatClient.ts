@@ -10,6 +10,8 @@ import {
   Unsubscribe,
   doc,
   setDoc,
+  increment,
+  updateDoc,
 } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -21,10 +23,12 @@ export type ChatMessage = {
   createdAt: any;
 };
 
+// ルームID作成
 export function buildRoomId(uid1: string, uid2: string) {
   return [uid1, uid2].sort().join("__");
 }
 
+// メッセージ購読
 export function subscribeMessages(
   roomId: string,
   callback: (messages: ChatMessage[]) => void
@@ -44,9 +48,11 @@ export function subscribeMessages(
   });
 }
 
+// メッセージ送信
 export async function sendMessage(
   roomId: string,
   senderUid: string,
+  receiverUid: string,
   text: string
 ) {
   const value = text.trim();
@@ -59,7 +65,7 @@ export async function sendMessage(
     createdAt: serverTimestamp(),
   });
 
-  // 最終メッセージ更新（未読判定に使う）
+  // 最終メッセージ更新
   await setDoc(
     doc(db, "chatRooms", roomId),
     {
@@ -71,14 +77,20 @@ export async function sendMessage(
     },
     { merge: true }
   );
-}
 
-export async function markAsRead(roomId: string, uid: string) {
+  // 相手の未読 +1
   await setDoc(
-    doc(db, "chatRooms", roomId, "members", uid),
+    doc(db, "chatRooms", roomId),
     {
-      lastReadAt: serverTimestamp(),
+      [`unreadCount_${receiverUid}`]: increment(1),
     },
     { merge: true }
   );
+}
+
+// チャットを開いたとき未読を0にする
+export async function markAsRead(roomId: string, uid: string) {
+  await updateDoc(doc(db, "chatRooms", roomId), {
+    [`unreadCount_${uid}`]: 0,
+  });
 }
