@@ -361,6 +361,7 @@ export default function ScanPage() {
     ...labelStyle,
     fontWeight: 800,
     opacity: 1,
+    color: "#fde68a",
   };
 
   const iconStyle: React.CSSProperties = {
@@ -369,8 +370,13 @@ export default function ScanPage() {
   };
 
   const activeIconStyle: React.CSSProperties = {
-    filter:
-      "drop-shadow(0 0 10px rgba(255,255,255,0.55)) drop-shadow(0 0 14px rgba(96,165,250,0.50))",
+        color: "#fde68a",
+    filter: `
+      drop-shadow(0 0 6px rgba(255,255,255,0.95))
+      drop-shadow(0 0 14px rgba(253,230,138,0.80))
+      drop-shadow(0 0 22px rgba(125,211,252,0.60))
+      drop-shadow(0 0 30px rgba(168,85,247,0.45))
+    `,
     transition: "all 0.16s ease",
   };
 
