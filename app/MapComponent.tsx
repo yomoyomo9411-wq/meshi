@@ -501,6 +501,7 @@ export default function MapComponent() {
     center={mapCenter}
     zoom={zoom}
     style={{ height: "100%", width: "100%", zIndex: 0 }}
+    
   >
     <TileLayer
       attribution='&copy; <a href="http://jawg.io">&copy; <b>Jawg</b>Maps</a>'
@@ -644,32 +645,6 @@ export default function MapComponent() {
       : "位置情報を取得しています…"}
   </div>
 )}
-          <div
-            style={{
-              position: "fixed",
-              top: 10,
-              left: 10,
-              right: 10,
-              zIndex: 2000,
-              padding: "10px 12px",
-              background: isLocationError
-                ? "rgba(220, 38, 38, 0.9)"
-                : "rgba(0,0,0,0.7)",
-              color: "white",
-              borderRadius: 12,
-              fontSize: 13,
-              textAlign: "center",
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-              fontWeight: isLocationError ? "bold" : "normal",
-              transition: "all 0.3s",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-            }}
-          >
-            {storyOpen
-              ? "出会い星座モード：左右スワイプで履歴をたどれます"
-              : status}
-          </div>
 
           {!storyOpen && (
             <button
