@@ -587,17 +587,6 @@ export default function MyPage() {
             />
 
             <Field
-              label="SNSリンク（改行で複数入力可）"
-              value={profile.sns}
-              onChange={(v) => setProfile((p) => ({ ...p, sns: v }))}
-              placeholder={"例）\nhttps://instagram.com/xxxx\nhttps://x.com/xxxx"}
-              label="Instagram（自由記入）"
-              value={profile.instagram}
-              onChange={(v) => setProfile((p) => ({ ...p, instagram: v }))}
-              placeholder="例）https://instagram.com/xxxx"
-            />
-
-            <Field
               label="X（自由記入）"
               value={profile.x}
               onChange={(v) => setProfile((p) => ({ ...p, x: v }))}
