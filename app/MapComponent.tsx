@@ -258,31 +258,34 @@ export default function MapComponent() {
   }, [user, encounters, storyOpen, searchParams]);
 
   useEffect(() => {
-    if (!user) return;
+  if (!user) return;
 
-    const unsub = onSnapshot(collection(db, "chatRooms"), (snap) => {
-      let unread = false;
+  const unsub = onSnapshot(collection(db, "chatRooms"), (snap) => {
 
-      snap.docs.forEach((doc) => {
-        const roomId = doc.id;
+    let unread = false;
 
-        if (!roomId.includes(user.uid)) return;
+    snap.docs.forEach((doc) => {
 
-        const data = doc.data();
-        const lastMessage = data?.lastMessage;
+      const roomId = doc.id;
 
-        if (!lastMessage) return;
+      if (!roomId.includes(user.uid)) return;
 
-        if (lastMessage.senderUid !== user.uid) {
-          unread = true;
-        }
-      });
+      const data = doc.data();
 
-      setHasUnreadChat(unread);
+      const count = data?.[`unreadCount_${user.uid}`] ?? 0;
+
+      if (count > 0) {
+        unread = true;
+      }
+
     });
 
-    return () => unsub();
-  }, [user]);
+    setHasUnreadChat(unread);
+
+  });
+
+  return () => unsub();
+}, [user]);
 
   const navButtonBase: React.CSSProperties = {
     position: "relative",
@@ -467,7 +470,7 @@ export default function MapComponent() {
             />
 
             <Recenter center={mapCenter} zoom={zoom} offsetY={mapOffsetY} />
-            
+
             {!storyOpen &&
               encounters
                 .filter((item) => {
