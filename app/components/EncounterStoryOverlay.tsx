@@ -127,6 +127,8 @@ export default function EncounterStoryOverlay({
     touchStartXRef.current = null;
   };
 
+  const eventLabel = current.eventName?.trim() || "";
+
   return (
     <div
       style={{
@@ -201,22 +203,26 @@ export default function EncounterStoryOverlay({
               padding: "16px 12px 0 18px",
             }}
           >
-            <div
-              style={{
-                maxWidth: "72%",
-                fontWeight: 900,
-                fontSize: 15,
-                color: "#fde68a",
-                letterSpacing: "0.02em",
-                lineHeight: 1.2,
-                textShadow: "0 0 10px rgba(0,0,0,0.25)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {current.eventName?.trim() || ""}
-            </div>
+            {eventLabel ? (
+              <div
+                style={{
+                  maxWidth: "72%",
+                  fontWeight: 900,
+                  fontSize: 15,
+                  color: "#fde68a",
+                  letterSpacing: "0.02em",
+                  lineHeight: 1.2,
+                  textShadow: "0 0 10px rgba(0,0,0,0.25)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {eventLabel}
+              </div>
+            ) : (
+              <div />
+            )}
 
             <button
               type="button"

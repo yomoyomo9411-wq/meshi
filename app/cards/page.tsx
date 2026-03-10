@@ -15,6 +15,7 @@ import { auth } from "../lib/firebase";
 import {
   fetchLatestCardsByOwner,
   markEncountersAsRead,
+  updateEncounterEventName,
 } from "../lib/encounterClient";
 
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
@@ -27,6 +28,8 @@ export default function CardsPage() {
   const [loading, setLoading] = useState(true);
   const [showNewBanner, setShowNewBanner] = useState(false);
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
+  const [eventInputs, setEventInputs] = useState<Record<string, string>>({});
+  const [savingEventId, setSavingEventId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -42,6 +45,12 @@ export default function CardsPage() {
       try {
         const data = await fetchLatestCardsByOwner(u.uid);
         setCards(data);
+
+        const initialInputs: Record<string, string> = {};
+        data.forEach((item) => {
+          initialInputs[item.id] = item.eventName ?? "";
+        });
+        setEventInputs(initialInputs);
 
         const hasUnread = data.some((item) => item.isUnread === true);
         setShowNewBanner(hasUnread);
@@ -63,6 +72,26 @@ export default function CardsPage() {
     const sec = createdAt?.seconds;
     if (!sec) return "保存直後";
     return new Date(sec * 1000).toLocaleString("ja-JP");
+  };
+
+  const saveEventName = async (cardId: string) => {
+    const value = (eventInputs[cardId] ?? "").trim();
+
+    try {
+      setSavingEventId(cardId);
+      await updateEncounterEventName(cardId, value);
+
+      setCards((prev) =>
+        prev.map((item) =>
+          item.id === cardId ? { ...item, eventName: value } : item
+        )
+      );
+    } catch (e) {
+      console.error(e);
+      alert("イベント名の保存に失敗しました");
+    } finally {
+      setSavingEventId(null);
+    }
   };
 
   const navButtonBase: React.CSSProperties = {
@@ -335,11 +364,8 @@ export default function CardsPage() {
           }}
         >
           {cards.map((item) => (
-            <button
+            <div
               key={item.id}
-              onClick={() =>
-                router.push(`/?focusOtherUid=${item.otherUid}&from=cards`)
-              }
               style={{
                 borderRadius: 18,
                 padding: 16,
@@ -351,73 +377,134 @@ export default function CardsPage() {
                 gap: 12,
                 textAlign: "left",
                 color: "white",
-                cursor: "pointer",
                 boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
               }}
             >
-              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                <div
+              <button
+                onClick={() =>
+                  router.push(`/?focusOtherUid=${item.otherUid}&from=cards`)
+                }
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
+                  margin: 0,
+                  display: "grid",
+                  gap: 12,
+                  textAlign: "left",
+                  color: "white",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <div
+                    style={{
+                      width: 70,
+                      height: 70,
+                      borderRadius: 16,
+                      overflow: "hidden",
+                      background: "rgba(255,255,255,0.10)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      display: "grid",
+                      placeItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.snapshot?.photoURL ? (
+                      <img
+                        src={item.snapshot.photoURL}
+                        alt="snapshot"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    ) : (
+                      <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div style={{ fontWeight: 900, fontSize: 18 }}>
+                      {item.snapshot?.name || "名前未設定"}
+                    </div>
+                    <div style={{ opacity: 0.85, marginTop: 4 }}>
+                      {item.snapshot?.affiliation || "所属未設定"}
+                    </div>
+                  </div>
+                </div>
+
+                {item.snapshot?.history?.trim() && (
+                  <div
+                    style={{
+                      padding: 12,
+                      borderRadius: 14,
+                      background: "rgba(0,0,0,0.25)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      whiteSpace: "pre-wrap",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {item.snapshot.history}
+                  </div>
+                )}
+
+                <div style={{ fontSize: 13, opacity: 0.85 }}>
+                  最新の交換時間：{formatTime(item.createdAt)}
+                </div>
+
+                <div style={{ fontSize: 13, opacity: 0.85 }}>
+                  最新の交換場所：{item.address || "住所不明"}
+                </div>
+              </button>
+
+              <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, opacity: 0.95 }}>
+                  イベント名
+                </div>
+
+                <input
+                  value={eventInputs[item.id] ?? ""}
+                  onChange={(e) =>
+                    setEventInputs((prev) => ({
+                      ...prev,
+                      [item.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="例）ハッカソンで会った / 富山市のカフェで会った"
                   style={{
-                    width: 70,
-                    height: 70,
-                    borderRadius: 16,
-                    overflow: "hidden",
-                    background: "rgba(255,255,255,0.10)",
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 12,
                     border: "1px solid rgba(255,255,255,0.12)",
-                    display: "grid",
-                    placeItems: "center",
-                    flexShrink: 0,
+                    background: "rgba(0,0,0,0.22)",
+                    color: "white",
+                    outline: "none",
+                    fontSize: 14,
+                    boxSizing: "border-box",
                   }}
-                >
-                  {item.snapshot?.photoURL ? (
-                    <img
-                      src={item.snapshot.photoURL}
-                      alt="snapshot"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    <div style={{ fontWeight: 800, opacity: 0.85 }}>No</div>
-                  )}
-                </div>
+                />
 
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 18 }}>
-                    {item.snapshot?.name || "名前未設定"}
-                  </div>
-                  <div style={{ opacity: 0.85, marginTop: 4 }}>
-                    {item.snapshot?.affiliation || "所属未設定"}
-                  </div>
-                </div>
-              </div>
-
-              {item.snapshot?.history?.trim() && (
-                <div
+                <button
+                  onClick={() => saveEventName(item.id)}
+                  disabled={savingEventId === item.id}
                   style={{
-                    padding: 12,
-                    borderRadius: 14,
-                    background: "rgba(0,0,0,0.25)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    whiteSpace: "pre-wrap",
-                    lineHeight: 1.5,
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: "none",
+                    background:
+                      savingEventId === item.id ? "#9ca3af" : "#f59e0b",
+                    color: "#111827",
+                    fontWeight: 900,
+                    cursor: savingEventId === item.id ? "default" : "pointer",
                   }}
                 >
-                  {item.snapshot.history}
-                </div>
-              )}
-
-              <div style={{ fontSize: 13, opacity: 0.85 }}>
-                最新の交換時間：{formatTime(item.createdAt)}
+                  {savingEventId === item.id ? "保存中…" : "イベント名を保存"}
+                </button>
               </div>
-
-              <div style={{ fontSize: 13, opacity: 0.85 }}>
-                最新の交換場所：{item.address || "住所不明"}
-              </div>
-            </button>
+            </div>
           ))}
         </div>
       )}

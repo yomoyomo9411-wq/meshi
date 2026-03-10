@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   updateDoc,
   where,
+  doc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { fetchProfile } from "./profileClient";
@@ -171,6 +172,15 @@ export async function markEncountersAsRead(ownerUid: string) {
   for (const docSnap of result.docs) {
     await updateDoc(docSnap.ref, { isUnread: false });
   }
+}
+
+export async function updateEncounterEventName(
+  encounterId: string,
+  eventName: string
+) {
+  await updateDoc(doc(db, "encounters", encounterId), {
+    eventName,
+  });
 }
 
 async function getCurrentPositionWithFallback(): Promise<{
