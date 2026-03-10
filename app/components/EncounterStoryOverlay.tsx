@@ -223,6 +223,7 @@ export default function EncounterStoryOverlay({
             ) : (
               <div />
             )}
+          
 
             <button
               type="button"
@@ -490,15 +491,30 @@ export default function EncounterStoryOverlay({
             >
               <div
                 style={{
-                  textAlign: "center",
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: "#fde68a",
-                  textShadow: "0 0 10px rgba(0,0,0,0.28)",
-                }}
+  textAlign: "center",
+  fontSize: 13,
+  fontWeight: 800,
+  color: "#fde68a",
+  padding: "4px 12px",
+  borderRadius: 999,
+
+  background: "rgba(0,0,0,0.45)",
+
+  backdropFilter: "blur(10px)",
+  WebkitBackdropFilter: "blur(10px)",
+
+  border: "1px solid rgba(255,255,255,0.25)",
+
+  textShadow: "0 0 8px rgba(253,230,138,0.6)",
+
+  boxShadow: `
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    0 6px 16px rgba(0,0,0,0.4)
+  `,
+}}
               >
                 {currentIndex === 0
-                  ? "最新の名刺"
+                  ? "NEW!"
                   : `${currentIndex + 1} / ${items.length}`}
               </div>
             </div>
