@@ -585,7 +585,7 @@ const canSave = useMemo(() => {
             <div style={{ height: 16 }} />
 
             <Field
-              label="所属（自由記入）"
+              label="所属（任意）"
               maxLength={30}
               value={profile.affiliation}
               onChange={(v) => setProfile((p) => ({ ...p, affiliation: v }))}
@@ -593,21 +593,21 @@ const canSave = useMemo(() => {
             />
 
             <Field
-              label="X（自由記入）"
+              label="X（任意）"
               value={profile.x}
               onChange={(v) => setProfile((p) => ({ ...p, x: v }))}
               placeholder="例）https://x.com/xxxx"
             />
 
             <Field
-              label="GitHub（自由記入）"           
+              label="GitHub（任意）"           
               value={profile.otherSns}
               onChange={(v) => setProfile((p) => ({ ...p, otherSns: v }))}
               placeholder="例）https://github.com/xxxx"
             />
 
             <TextAreaField
-              label="活動履歴（自由記入）"
+              label="活動履歴（任意）"
               value={profile.history}
               onChange={(v) => setProfile((p) => ({ ...p, history: v }))}
               placeholder={
@@ -618,7 +618,7 @@ const canSave = useMemo(() => {
 
             <div style={{ marginTop: 16 }}>
               <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
-                名刺デザイン
+                名刺デザイン（必須）
               </div>
 
               <div
