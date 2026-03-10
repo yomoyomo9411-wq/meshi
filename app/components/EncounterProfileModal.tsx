@@ -1,7 +1,11 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import type { EncounterDoc } from "../lib/encounterClient";
+
+import { TROPHY_LIST } from "../achivements/constants"; // パスは適宜調整してください
+import { fetchLatestCardsByOwner } from "../lib/encounterClient";
+import { Fragment } from "react";
 
 type Props = {
   open: boolean;
@@ -17,10 +21,22 @@ export default function EncounterProfileModal({
   currentIndex,
   onChangeIndex,
   onClose,
+  
 }: Props) {
   const touchStartXRef = useRef<number | null>(null);
 
   const current = items[currentIndex];
+
+  const [otherCardCount, setOtherCardCount] = useState(0);
+
+  // 🟢 この画面が開いたとき or 履歴を切り替えたときに相手の枚数を数える
+  useEffect(() => {
+    if (open && current?.otherUid) {
+      fetchLatestCardsByOwner(current.otherUid).then((cards) => {
+        setOtherCardCount(cards.length);
+      });
+    }
+  }, [open, current?.otherUid]);
 
   const formatTime = (createdAt: any) => {
   const sec = createdAt?.seconds;
@@ -217,6 +233,33 @@ const shortenAddress = (address?: string) => {
               }}
             />
 
+            <div style={{
+              position: "absolute",
+              left: "8%",
+              bottom: "5%",
+              width: "45%",
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              alignItems: "center",
+              gap: "5px",
+              zIndex: 10,
+            }}>
+              {TROPHY_LIST.map((t) => {
+                const isUnlocked = otherCardCount >= t.threshold; // ★相手用なので otherCardCount
+                const Icon = t.icon;
+                return (
+                  <div key={t.id} style={{ 
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    opacity: isUnlocked ? 1 : 0.25,
+                    filter: isUnlocked ? `drop-shadow(0 0 5px ${t.color}aa)` : "none",
+                  }}>
+                    <Icon size={18} color={isUnlocked ? t.color : "#4b5563"} strokeWidth={isUnlocked ? 2.5 : 1.2} fill="none" />
+                  </div>
+                );
+              })}
+            </div>
+
 {/* 上部：交換時間・場所 */}
 <div
   style={{
@@ -344,24 +387,84 @@ const shortenAddress = (address?: string) => {
             </div>
 
             {/* 履歴 */}
+           {/* 1. 活動履歴：縦は中央揃え、横は左揃え */}
             <div
               style={{
                 position: "absolute",
-                top: "66.5%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "76%",
-                textAlign: "center",
-                fontSize: "clamp(10px, 1.8vw, 15px)",
-                lineHeight: 1.45,
+                top: "57%",
+                left: "12%",     // ★左側に少し余白を作る
+                width: "76%",    // ★横幅を少し絞ってバランスを調整
+                height: "18%",
+                display: "flex",
+                alignItems: "center",     // ★縦方向は中央揃え
+                justifyContent: "center", // ★文章ブロック自体は真ん中に配置
+                
+                // ★ここがポイント：横方向のテキストを左揃えにする
+                textAlign: "left", 
+                
+                fontSize: "clamp(9px, 1.4vw, 11px)",
+                lineHeight: 1.5,
                 color: "#4b5563",
                 whiteSpace: "pre-wrap",
                 wordBreak: "break-word",
+                overflow: "hidden",
+                pointerEvents: "none",
               }}
             >
-              {current.snapshot?.history || ""}
+              <div style={{ width: "100%" }}>
+                {/* 200文字制限 */}
+                {current.snapshot?.history ? current.snapshot.history.slice(0, 200) : ""}
+              </div>
             </div>
-          </div>
+
+            {/* 2. トロフィー一覧：サイズアップ ＆ 存在感強化 */}
+            <div style={{
+              position: "absolute",
+              left: "20%",
+              bottom: "20%",   // QRコードの頭と高さを合わせる
+              width: "50%",    // 横幅を少し広げてゆったり並べる
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              alignItems: "center",
+              gap: "10px",     // 間隔を少し広げて見やすく
+              zIndex: 10,
+              // ★隠し味：トロフィーの下にうっすらと高級感のある影を置く
+              filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))",
+            }}>
+              {TROPHY_LIST.map((t) => {
+                // 自分の名刺なら cardCount、相手なら otherCardCount にしてください
+                const isUnlocked = otherCardCount >= t.threshold; 
+                const Icon = t.icon;
+                return (
+                  <div key={t.id} style={{ 
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    // 獲得済みはクッキリ、未獲得はシルエットとして存在感を残す
+                    opacity: isUnlocked ? 1 : 0.2,
+                    // ★獲得済みはネオンのような強い光を放つ
+                    filter: isUnlocked 
+                      ? `drop-shadow(0 0 10px ${t.color}) drop-shadow(0 0 20px ${t.color}44)` 
+                      : "none",
+                    transition: "all 0.3s ease"
+                  }}>
+                    <Icon 
+                      size={26} // ★デカくしました！（18 -> 26）
+                      color={isUnlocked ? t.color : "#4b5563"} 
+                      // 線の太さを上げて存在感を出す
+                      strokeWidth={isUnlocked ? 2.8 : 1.5} 
+                      fill="none" 
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* --- この下にQRコードのボタンが続きます --- */}
+
+            position: "absolute",
+            </div>
         </div>
 
         {/* 履歴ナビゲーション */}

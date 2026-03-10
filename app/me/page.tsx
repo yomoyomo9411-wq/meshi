@@ -9,6 +9,7 @@ import {
   QrCode,
   MessageCircle,
   IdCard,
+
 } from "lucide-react";
 
 import AuthButton from "../components/AuthButton";
@@ -50,7 +51,7 @@ const cardDesignOptions: {
   src: string;
   label: string;
 }[] = [
-  { key: "card-base", src: "/card-base.png", label: "シンプル" },
+  { key: "card-base", src: "/card-base.png", label: "ノーマル" },
   { key: "cars-base2", src: "/cars-base2.png", label: "和風" },
 ];
 function parseSns(raw?: string) {
@@ -150,7 +151,10 @@ export default function MyPage() {
     };
   }, []);
 
-  const canSave = useMemo(() => profile.name.trim().length > 0, [profile.name]);
+const canSave = useMemo(() => {
+  // 名前がある 且つ 履歴が200文字以内 のときだけOK
+  return profile.name.trim().length > 0 && profile.history.length <= 200;
+}, [profile.name, profile.history]);
 
   const save = async () => {
     if (!user) {
@@ -556,6 +560,7 @@ export default function MyPage() {
 
                 <input
                   value={profile.name}
+                  maxLength={20}
                   onChange={(e) =>
                     setProfile((p) => ({ ...p, name: e.target.value }))
                   }
@@ -581,9 +586,10 @@ export default function MyPage() {
 
             <Field
               label="所属（自由記入）"
+              maxLength={30}
               value={profile.affiliation}
               onChange={(v) => setProfile((p) => ({ ...p, affiliation: v }))}
-              placeholder="例）月島工業株式会社"
+              placeholder="例）Luminous株式会社"
             />
 
             <Field
@@ -594,7 +600,7 @@ export default function MyPage() {
             />
 
             <Field
-              label="GitHub（自由記入）"
+              label="GitHub（自由記入）"           
               value={profile.otherSns}
               onChange={(v) => setProfile((p) => ({ ...p, otherSns: v }))}
               placeholder="例）https://github.com/xxxx"
@@ -607,6 +613,7 @@ export default function MyPage() {
               placeholder={
                 "例）\n・ハッカソン参加\n・映像制作\n・IoTプロトタイピング など"
               }
+              maxLength={200} 
             />
 
             <div style={{ marginTop: 16 }}>
@@ -927,16 +934,25 @@ function Field(props: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  maxLength?: number;
 }) {
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6 }}>
-        {props.label}
+      {/* 🟢 alignItems: "baseline" で文字の下のラインを揃えます */}
+      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6, display: "flex", alignItems: "baseline" }}>
+        <span>{props.label}</span>
+        {/* 🟢 200の方に合わせて、横並びでカッコ付きに統一 */}
+        {props.maxLength && (
+          <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 8 }}>
+            ({props.value.length} / {props.maxLength})
+          </span>
+        )}
       </div>
       <input
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}
         placeholder={props.placeholder}
+        maxLength={props.maxLength}
         style={{
           width: "100%",
           padding: "12px 12px",
@@ -957,16 +973,24 @@ function TextAreaField(props: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  maxLength?: number;
 }) {
   return (
     <div style={{ marginTop: 12 }}>
-      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6 }}>
-        {props.label}
+      {/* 🟢 こちらも同様に Flexbox で位置を整えます */}
+      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6, display: "flex", alignItems: "baseline" }}>
+        <span>{props.label}</span>
+        {props.maxLength && (
+          <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 8 }}>
+            ({props.value.length} / {props.maxLength})
+          </span>
+        )}
       </div>
       <textarea
         value={props.value}
         onChange={(e) => props.onChange(e.target.value)}
         placeholder={props.placeholder}
+        maxLength={props.maxLength}
         rows={5}
         style={{
           width: "100%",
@@ -977,7 +1001,7 @@ function TextAreaField(props: {
           color: "white",
           outline: "none",
           fontSize: 15,
-          resize: "vertical",
+          resize: "none", // スマホで崩れないように固定するのがおすすめ
         }}
       />
     </div>
