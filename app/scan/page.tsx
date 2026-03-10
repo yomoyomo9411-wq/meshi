@@ -133,6 +133,8 @@ export default function ScanPage() {
     }
   }
 
+  
+
   useEffect(() => {
     if (!user) return;
 
