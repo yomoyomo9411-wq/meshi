@@ -92,16 +92,26 @@ export default function MapComponent() {
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
   const zoom = 15;
-  const handledFocusOtherUidRef = useRef<string | null>(null);
+  const handledFocusOtherUidRef = useRef<string | null>(null); 
+   const getOffsetLatLng = (lat: number, lng: number, id?: string) => {
+    if (!id) return [lat, lng] as [number, number];
+    
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    const latShift = ((hash & 0xFF) / 128) - 1; 
+    const lngShift = (((hash >> 8) & 0xFF) / 128) - 1;
 
-    const getOffsetLatLng = (lat: number, lng: number, id?: string) => {
-    const idStr = id || "0";
-    const n1 = parseInt(idStr.slice(-2), 16);
-    const n2 = parseInt(idStr.slice(-3), 16);
-    const latOffset = ((Number.isFinite(n1) ? n1 : 0) % 10 - 5) * 0.00003;
-    const lngOffset = ((Number.isFinite(n2) ? n2 : 0) % 10 - 5) * 0.00003;
-    return [lat + latOffset, lng + lngOffset] as [number, number];
+    const spread = 0.00015; // ズレの幅
+    
+    return [
+      lat + (latShift * spread),
+      lng + (lngShift * spread)
+    ] as [number, number];
   };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -548,6 +558,7 @@ export default function MapComponent() {
                   ? (yellowShinyStarIcon as L.DivIcon)
                   : (blueShinyStarIcon as L.DivIcon)
               }
+              zIndexOffset={item.isLatest ? 100 : 0}
               eventHandlers={{
                 click: () => {
                   void openStoryFromEncounter(item);
@@ -629,7 +640,7 @@ export default function MapComponent() {
                   ? (yellowShinyStarIcon as L.DivIcon)
                   : (blueShinyStarIcon as L.DivIcon)
               }
-              zIndexOffset={isCurrent ? 1000 : 500}
+              zIndexOffset={isCurrent ? 1000 : (item.isLatest ? 500 : 0)}
               eventHandlers={{
                 click: () => setStoryIndex(index),
               }}

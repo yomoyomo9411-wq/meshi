@@ -94,31 +94,26 @@ export const purpleOrbIcon = typeof window !== "undefined"
 export const StarPinIcon = typeof window !== "undefined"
   ? L.divIcon({
       html: `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="40px" height="52px" style="overflow: visible;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 32" width="32px" height="42px" style="overflow: visible;">
           <defs>
-            <!-- 本体：薄紅から深紅への滑らかなグラデーション -->
             <linearGradient id="starNebulaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="#fee2e2" />   <!-- 最上部：薄紅 -->
-              <stop offset="100%" stop-color="#991b1b" /> <!-- 下部：深い赤 -->
+              <stop offset="0%" stop-color="#fee2e2" />
+              <stop offset="100%" stop-color="#991b1b" />
             </linearGradient>
 
-            <!-- 1. 全体を包み込む「白っぽいオーラ」 -->
             <filter id="whiteAura" x="-100%" y="-100%" width="300%" height="300%">
               <feGaussianBlur stdDeviation="3.5" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
               <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="white" flood-opacity="0.4"/>
             </filter>
 
-            <!-- 2. 真ん中の「もやぁ」とした巨大な白い光の層 -->
             <filter id="hazyCore" x="-150%" y="-150%" width="400%" height="400%">
               <feGaussianBlur stdDeviation="5" result="moya" />
             </filter>
           </defs>
 
-          <!-- 地面の照り返し -->
           <ellipse cx="12" cy="30" rx="8" ry="3" fill="white" opacity="0.15" filter="blur(3px)" />
 
-          <!-- ピン本体 -->
           <g filter="url(#whiteAura)">
             <path 
               d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20c0-6.63-5.37-12-12-12z" 
@@ -127,16 +122,12 @@ export const StarPinIcon = typeof window !== "undefined"
             />
           </g>
 
-          <!-- 【調整】真ん中の大きな白いまる（半径を 8 → 10 へ拡大、もやぁ感をアップ） -->
           <circle cx="12" cy="11" r="10" fill="white" opacity="0.35" filter="url(#hazyCore)" />
-          
-          <!-- 【調整】中心の一番明るい純白の核（半径を 3.2 → 4.5 へ拡大） -->
           <circle cx="12" cy="11" r="4.5" fill="white" opacity="0.9" filter="blur(1.5px)" />
-
         </svg>`,
       className: "custom-star-pin",
-      iconSize: [40, 52],
-      iconAnchor: [20, 52],
-      popupAnchor: [0, -45],
+      iconSize: [27, 37],   // ← 小さくしました
+      iconAnchor: [16, 42], // ← 下端の中央に固定
+      popupAnchor: [0, -35],
     })
   : null;
