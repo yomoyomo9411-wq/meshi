@@ -22,6 +22,7 @@ import {
 import { Fragment } from "react";
 
 import { blueShinyStarIcon, yellowShinyStarIcon } from "./MapIcon";
+import { StarPinIcon } from "./MapIcon";
 import EncounterStoryOverlay from "./components/EncounterStoryOverlay";
 
 import { onAuthStateChanged, type User } from "firebase/auth";
@@ -509,6 +510,14 @@ export default function MapComponent() {
     />
 
     <Recenter center={mapCenter} zoom={zoom} offsetY={mapOffsetY} />
+
+        {markerPos && (
+      <Marker
+        position={markerPos}
+        icon={StarPinIcon as L.DivIcon}
+        interactive={false}
+      />
+    )}
 
     {!storyOpen &&
       encounters
