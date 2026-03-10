@@ -12,7 +12,7 @@ import {
   IdCard,
   Instagram,
   Twitter,
-  Link2,
+  Github,
 } from "lucide-react";
 
 import { auth } from "../lib/firebase";
@@ -99,10 +99,10 @@ export default function MeisiPage() {
         icon: Twitter,
       },
       {
-        label: "その他SNS",
+        label: "GitHub",
         value: parsed.otherSns,
         href: buildHref(parsed.otherSns),
-        icon: Link2,
+        icon: Github,
       },
     ].filter((item) => item.value.trim().length > 0 && item.href);
   }, [profile.sns]);
