@@ -50,8 +50,8 @@ const cardDesignOptions: {
   src: string;
   label: string;
 }[] = [
-  { key: "card-base", src: "/card-base.png", label: "デザイン1" },
-  { key: "cars-base2", src: "/cars-base2.png", label: "デザイン2" },
+  { key: "card-base", src: "/card-base.png", label: "シンプル" },
+  { key: "cars-base2", src: "/cars-base2.png", label: "和風" },
 ];
 function parseSns(raw?: string) {
   if (!raw?.trim()) {
@@ -173,7 +173,7 @@ export default function MyPage() {
 
     try {
       await saveProfile(user.uid, docData);
-      showToast("Firestoreに保存しました！");
+      showToast("保存しました！");
     } catch (e) {
       console.error(e);
       showToast("保存に失敗しました");
