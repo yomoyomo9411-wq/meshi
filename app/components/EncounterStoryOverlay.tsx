@@ -319,18 +319,21 @@ export default function EncounterStoryOverlay({
               {/* アイコン */}
               <div
                 style={{
-                  position: "absolute",
-                  top: "13.2%",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "23.8%",
-                  aspectRatio: "1 / 1",
-                  borderRadius: "999px",
-                  overflow: "hidden",
-                  background: "#241672",
-                  boxShadow:
-                    "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)",
-                }}
+    position: "absolute",
+    top: "13.2%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "23.8%",
+    aspectRatio: "1 / 1",
+    borderRadius: "999px",
+    overflow: "hidden",
+    background: "#241672",
+
+    boxShadow:
+      currentIndex === 0
+        ? "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)"
+        : "0 0 0 6px rgba(125,211,252,0.35), 0 0 30px rgba(125,211,252,0.55), 0 0 70px rgba(125,211,252,0.35)",
+  }}
               >
                 {current.snapshot?.photoURL ? (
                   <img
