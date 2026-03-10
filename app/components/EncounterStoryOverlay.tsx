@@ -199,7 +199,7 @@ export default function EncounterStoryOverlay({
               zIndex: 1,
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
+              justifyContent: "flex-end",
               padding: "16px 12px 0 18px",
             }}
           >
