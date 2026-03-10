@@ -10,25 +10,45 @@ import {
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
+export type CardDesignType = "card-base" | "cars-base2";
+
 export type ProfileDoc = {
   name: string;
   affiliation: string;
   sns: string;
   history: string;
   photoURL: string; // StorageのURL
+  cardDesign?: CardDesignType;
   updatedAt?: Timestamp;
 };
 
 export async function fetchProfile(uid: string): Promise<ProfileDoc | null> {
   const snap = await getDoc(doc(db, "profiles", uid));
   if (!snap.exists()) return null;
-  return snap.data() as ProfileDoc;
+
+  const data = snap.data() as ProfileDoc;
+
+  return {
+    name: data.name ?? "",
+    affiliation: data.affiliation ?? "",
+    sns: data.sns ?? "",
+    history: data.history ?? "",
+    photoURL: data.photoURL ?? "",
+    cardDesign:
+      data.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
+    updatedAt: data.updatedAt,
+  };
 }
 
 export async function saveProfile(uid: string, data: ProfileDoc) {
   await setDoc(
     doc(db, "profiles", uid),
-    { ...data, updatedAt: serverTimestamp() },
+    {
+      ...data,
+      cardDesign:
+        data.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
+      updatedAt: serverTimestamp(),
+    },
     { merge: true }
   );
 }

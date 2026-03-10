@@ -14,16 +14,22 @@ import {
   Twitter,
   Github,
 } from "lucide-react";
+import { FaInstagram, FaXTwitter, FaLink } from "react-icons/fa6";
 
 import { auth } from "../lib/firebase";
-import { fetchProfile, type ProfileDoc } from "../lib/profileClient";
+import {
+  fetchProfile,
+  type ProfileDoc,
+  type CardDesignType,
+} from "../lib/profileClient";
 
-const defaultProfile: ProfileDoc = {
+const defaultProfile: ProfileDoc & { cardDesign: CardDesignType } = {
   name: "",
   affiliation: "",
   sns: "",
   history: "",
   photoURL: "",
+  cardDesign: "card-base",
 };
 
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
@@ -65,7 +71,8 @@ export default function MeisiPage() {
   const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<ProfileDoc>(defaultProfile);
+  const [profile, setProfile] =
+    useState<ProfileDoc & { cardDesign: CardDesignType }>(defaultProfile);
 
   const [loadedAuth, setLoadedAuth] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -73,7 +80,6 @@ export default function MeisiPage() {
 
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [qrText, setQrText] = useState<string>("");
-
   const [qrOpen, setQrOpen] = useState(false);
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
@@ -117,7 +123,11 @@ export default function MeisiPage() {
         setErrorMsg("プロフィールが見つかりませんでした。編集画面で保存してください。");
         return;
       }
-      setProfile({ ...defaultProfile, ...p });
+      setProfile({
+        ...defaultProfile,
+        ...p,
+        cardDesign: p.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
+      });
     } catch (e) {
       console.error(e);
       setErrorMsg("Firestoreからの読み込みに失敗しました。");
@@ -189,6 +199,30 @@ export default function MeisiPage() {
     };
   }, [user]);
 
+  const snsLinks = useMemo(() => {
+    return (profile.sns ?? "")
+      .split(/\n|,/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => {
+        const href =
+          s.startsWith("http://") || s.startsWith("https://")
+            ? s
+            : s.includes(".")
+            ? `https://${s}`
+            : "";
+
+        if (!href) return null;
+
+        let type: "instagram" | "x" | "other" = "other";
+        if (href.includes("instagram.com")) type = "instagram";
+        if (href.includes("x.com") || href.includes("twitter.com")) type = "x";
+
+        return { href, type };
+      })
+      .filter(Boolean) as { href: string; type: "instagram" | "x" | "other" }[];
+  }, [profile.sns]);
+
   const showLoading = !loadedAuth || loadingProfile;
 
   useEffect(() => {
@@ -198,6 +232,9 @@ export default function MeisiPage() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  const cardBaseSrc =
+    profile.cardDesign === "cars-base2" ? "/cars-base2.png" : "/card-base.png";
 
   const navButtonBase: React.CSSProperties = {
     position: "relative",
@@ -290,6 +327,14 @@ export default function MeisiPage() {
     ...labelStyle,
     fontWeight: 800,
     opacity: 1,
+    color: "#fde68a",
+    textShadow: `
+      0 0 6px rgba(255,255,255,0.95),
+      0 0 12px rgba(255,255,255,0.85),
+      0 0 18px rgba(253,230,138,0.75),
+      0 0 28px rgba(125,211,252,0.55),
+      0 0 40px rgba(168,85,247,0.45)
+    `,
   };
 
   const iconStyle: React.CSSProperties = {
@@ -298,8 +343,13 @@ export default function MeisiPage() {
   };
 
   const activeIconStyle: React.CSSProperties = {
-    filter:
-      "drop-shadow(0 0 10px rgba(255,255,255,0.55)) drop-shadow(0 0 14px rgba(96,165,250,0.50))",
+    color: "#fde68a",
+    filter: `
+      drop-shadow(0 0 6px rgba(255,255,255,0.95))
+      drop-shadow(0 0 14px rgba(253,230,138,0.80))
+      drop-shadow(0 0 22px rgba(125,211,252,0.60))
+      drop-shadow(0 0 30px rgba(168,85,247,0.45))
+    `,
     transition: "all 0.16s ease",
   };
 
@@ -308,22 +358,8 @@ export default function MeisiPage() {
     isPressed: boolean
   ): React.CSSProperties => {
     const base = isActive ? activeLabelStyle : labelStyle;
-
     if (!isPressed) return base;
-
-    return {
-      ...base,
-      color: "#ffffff",
-      textShadow: `
-        0 0 6px rgba(255,255,255,0.95),
-        0 0 12px rgba(255,255,255,0.85),
-        0 0 18px rgba(253,230,138,0.75),
-        0 0 28px rgba(125,211,252,0.55),
-        0 0 40px rgba(168,85,247,0.45)
-      `,
-      letterSpacing: "0.02em",
-      transform: "translateY(-1px)",
-    };
+    return { ...base, transform: "translateY(-1px)" };
   };
 
   const getPressedIconStyle = (
@@ -331,19 +367,8 @@ export default function MeisiPage() {
     isPressed: boolean
   ): React.CSSProperties => {
     const base = isActive ? activeIconStyle : iconStyle;
-
     if (!isPressed) return base;
-
-    return {
-      ...base,
-      filter: `
-        drop-shadow(0 0 6px rgba(255,255,255,0.95))
-        drop-shadow(0 0 14px rgba(253,230,138,0.80))
-        drop-shadow(0 0 22px rgba(125,211,252,0.60))
-        drop-shadow(0 0 30px rgba(168,85,247,0.45))
-      `,
-      transform: "scale(1.06)",
-    };
+    return { ...base, transform: "scale(1.06)" };
   };
 
   const pressHandlers = (tab: Exclude<TabKey, null>) => ({
@@ -635,7 +660,7 @@ export default function MeisiPage() {
               }}
             >
               <img
-                src="/card-base.png"
+                src={cardBaseSrc}
                 alt="card-base"
                 style={{
                   width: "100%",
@@ -713,6 +738,41 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
+                  top: "56.5%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "76%",
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                {snsLinks.map((item, index) => {
+                  let icon = <FaLink size={20} />;
+                  if (item.type === "instagram") icon = <FaInstagram size={20} />;
+                  if (item.type === "x") icon = <FaXTwitter size={20} />;
+
+                  return (
+                    <a
+                      key={`${item.href}-${index}`}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 999,
+                        display: "grid",
+                        placeItems: "center",
+                        background: "rgba(255,255,255,0.82)",
+                        color: "#1f2937",
+                        textDecoration: "none",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+                      }}
+                      title={item.href}
+                    >
+                      {icon}
                   top: "47.3%",
                   left: "50%",
                   transform: "translateX(-50%)",
@@ -782,6 +842,13 @@ export default function MeisiPage() {
               <div
                 style={{
                   position: "absolute",
+                  top: "64%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "76%",
+                  textAlign: "center",
+                  fontSize: "clamp(10px, 1.8vw, 15px)",
+                  lineHeight: 1.45,
                   top: "60.2%",
                   left: "8%",
                   width: "84%",
@@ -966,14 +1033,8 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "home")}
           {...pressHandlers("home")}
         >
-          <Home
-            size={20}
-            strokeWidth={2.2}
-            style={getPressedIconStyle(false, pressedTab === "home")}
-          />
-          <span style={getPressedLabelStyle(false, pressedTab === "home")}>
-            ホーム
-          </span>
+          <Home size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "home")} />
+          <span style={getPressedLabelStyle(false, pressedTab === "home")}>ホーム</span>
         </button>
 
         <button
@@ -981,14 +1042,8 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "cards")}
           {...pressHandlers("cards")}
         >
-          <CreditCard
-            size={20}
-            strokeWidth={2.2}
-            style={getPressedIconStyle(false, pressedTab === "cards")}
-          />
-          <span style={getPressedLabelStyle(false, pressedTab === "cards")}>
-            名刺一覧
-          </span>
+          <CreditCard size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "cards")} />
+          <span style={getPressedLabelStyle(false, pressedTab === "cards")}>名刺一覧</span>
         </button>
 
         <button
@@ -996,14 +1051,8 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "scan")}
           {...pressHandlers("scan")}
         >
-          <QrCode
-            size={20}
-            strokeWidth={2.2}
-            style={getPressedIconStyle(false, pressedTab === "scan")}
-          />
-          <span style={getPressedLabelStyle(false, pressedTab === "scan")}>
-            交換
-          </span>
+          <QrCode size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "scan")} />
+          <span style={getPressedLabelStyle(false, pressedTab === "scan")}>交換</span>
         </button>
 
         <button
@@ -1011,14 +1060,8 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(false, pressedTab === "chat")}
           {...pressHandlers("chat")}
         >
-          <MessageCircle
-            size={20}
-            strokeWidth={2.2}
-            style={getPressedIconStyle(false, pressedTab === "chat")}
-          />
-          <span style={getPressedLabelStyle(false, pressedTab === "chat")}>
-            チャット
-          </span>
+          <MessageCircle size={20} strokeWidth={2.2} style={getPressedIconStyle(false, pressedTab === "chat")} />
+          <span style={getPressedLabelStyle(false, pressedTab === "chat")}>チャット</span>
         </button>
 
         <button
@@ -1026,14 +1069,8 @@ export default function MeisiPage() {
           style={getPressedButtonStyle(true, pressedTab === "meisi")}
           {...pressHandlers("meisi")}
         >
-          <IdCard
-            size={20}
-            strokeWidth={2.2}
-            style={getPressedIconStyle(true, pressedTab === "meisi")}
-          />
-          <span style={getPressedLabelStyle(true, pressedTab === "meisi")}>
-            My名刺
-          </span>
+          <IdCard size={20} strokeWidth={2.2} style={getPressedIconStyle(true, pressedTab === "meisi")} />
+          <span style={getPressedLabelStyle(true, pressedTab === "meisi")}>My名刺</span>
         </button>
       </div>
     </div>

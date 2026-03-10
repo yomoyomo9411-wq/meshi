@@ -18,6 +18,7 @@ import {
   saveProfile,
   uploadProfileImage,
   type ProfileDoc,
+  type CardDesignType,
 } from "../lib/profileClient";
 
 type Profile = {
@@ -28,6 +29,7 @@ type Profile = {
   x: string;
   otherSns: string;
   history: string;
+  cardDesign: CardDesignType;
 };
 
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
@@ -40,8 +42,17 @@ const defaultProfile: Profile = {
   x: "",
   otherSns: "",
   history: "",
+  cardDesign: "card-base",
 };
 
+const cardDesignOptions: {
+  key: CardDesignType;
+  src: string;
+  label: string;
+}[] = [
+  { key: "card-base", src: "/card-base.png", label: "デザイン1" },
+  { key: "cars-base2", src: "/cars-base2.png", label: "デザイン2" },
+];
 function parseSns(raw?: string) {
   if (!raw?.trim()) {
     return {
@@ -118,6 +129,8 @@ export default function MyPage() {
             x: sns.x,
             otherSns: sns.otherSns,
             history: p.history ?? "",
+            cardDesign:
+              p.cardDesign === "card-base2" ? "card-base2" : "card-base",
           });
         } else {
           setProfile(defaultProfile);
@@ -154,6 +167,7 @@ export default function MyPage() {
       affiliation: profile.affiliation.trim(),
       sns: buildSnsString(profile),
       history: profile.history.trim(),
+      cardDesign: profile.cardDesign,
     };
 
     try {
@@ -197,8 +211,8 @@ export default function MyPage() {
     position: "relative",
     padding: "10px 4px",
     minHeight: 64,
-    borderRadius: 18,
     border: "1px solid rgba(255,255,255,0.16)",
+    borderRadius: 18,
     color: "#ffffff",
     fontWeight: 700,
     fontSize: "11px",
@@ -315,13 +329,8 @@ export default function MyPage() {
     isPressed: boolean
   ): React.CSSProperties => {
     const base = isActive ? activeLabelStyle : labelStyle;
-
     if (!isPressed) return base;
-
-    return {
-      ...base,
-      transform: "translateY(-1px)",
-    };
+    return { ...base, transform: "translateY(-1px)" };
   };
 
   const getPressedIconStyle = (
@@ -329,13 +338,8 @@ export default function MyPage() {
     isPressed: boolean
   ): React.CSSProperties => {
     const base = isActive ? activeIconStyle : iconStyle;
-
     if (!isPressed) return base;
-
-    return {
-      ...base,
-      transform: "scale(1.06)",
-    };
+    return { ...base, transform: "scale(1.06)" };
   };
 
   const pressHandlers = (tab: Exclude<TabKey, null>) => ({
@@ -582,6 +586,10 @@ export default function MyPage() {
             />
 
             <Field
+              label="SNSリンク（改行で複数入力可）"
+              value={profile.sns}
+              onChange={(v) => setProfile((p) => ({ ...p, sns: v }))}
+              placeholder={"例）\nhttps://instagram.com/xxxx\nhttps://x.com/xxxx"}
               label="Instagram（自由記入）"
               value={profile.instagram}
               onChange={(v) => setProfile((p) => ({ ...p, instagram: v }))}
@@ -610,6 +618,85 @@ export default function MyPage() {
                 "例）\n・ハッカソン参加\n・映像制作\n・IoTプロトタイピング など"
               }
             />
+
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+                名刺デザイン
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 12,
+                }}
+              >
+                {cardDesignOptions.map((item) => {
+                  const selected = profile.cardDesign === item.key;
+
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() =>
+                        setProfile((p) => ({
+                          ...p,
+                          cardDesign: item.key,
+                        }))
+                      }
+                      style={{
+                        padding: 10,
+                        borderRadius: 16,
+                        border: selected
+                          ? "2px solid #fde68a"
+                          : "1px solid rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.08)",
+                        boxShadow: selected
+                          ? "0 0 18px rgba(253,230,138,0.35)"
+                          : "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          aspectRatio: "9 / 16",
+                          borderRadius: 12,
+                          overflow: "hidden",
+                          background: "#111827",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <img
+                          src={item.src}
+                          alt={item.label}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            display: "block",
+                          }}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          marginTop: 8,
+                          color: "white",
+                          fontWeight: 700,
+                          fontSize: 13,
+                          textAlign: "center",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
               <button
