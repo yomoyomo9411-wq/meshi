@@ -25,6 +25,7 @@ const defaultProfile: ProfileDoc = {
   sns: "",
   history: "",
   photoURL: "",
+
 };
 
 type TabKey = "home" | "cards" | "scan" | "chat" | "meisi" | null;
@@ -191,6 +192,7 @@ export default function ScanPage() {
                 sns: p?.sns ?? "",
                 history: p?.history ?? "",
                 photoURL: p?.photoURL ?? "",
+                cardDesign: p?.cardDesign ?? "card-base", 
               });
 
               setStatus("読み取り完了。内容を確認して交換してください。");

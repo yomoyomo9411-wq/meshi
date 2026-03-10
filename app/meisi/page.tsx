@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import { TROPHY_LIST } from "../achivements/constants";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   Home,
@@ -22,6 +23,9 @@ import {
   type ProfileDoc,
   type CardDesignType,
 } from "../lib/profileClient";
+
+import { TrophyGallery } from "../achivements/TrophyGallery"; 
+import { fetchLatestCardsByOwner } from "../lib/encounterClient";
 
 const defaultProfile: ProfileDoc & { cardDesign: CardDesignType } = {
   name: "",
@@ -63,6 +67,8 @@ export default function MeisiPage() {
   const [qrText, setQrText] = useState<string>("");
   const [qrOpen, setQrOpen] = useState(false);
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
+
+  const [cardCount, setCardCount] = useState(0);
 
   const hasProfile = useMemo(
     () => profile.name.trim().length > 0,
@@ -129,6 +135,10 @@ export default function MeisiPage() {
         ...p,
         cardDesign: p.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
       });
+
+      const cards = await fetchLatestCardsByOwner(uid);
+      setCardCount(cards.length);
+
     } catch (e) {
       console.error(e);
       setErrorMsg("Firestoreからの読み込みに失敗しました。");
@@ -503,23 +513,6 @@ export default function MeisiPage() {
       >
         <div style={{ fontSize: 18, fontWeight: 900 }}>名刺</div>
 
-        <button
-          type="button"
-          onClick={() => user && void loadFromFirestore(user.uid)}
-          disabled={!user}
-          style={{
-            marginLeft: "auto",
-            padding: "10px 12px",
-            borderRadius: 12,
-            border: "none",
-            background: "rgba(255,255,255,0.12)",
-            color: "white",
-            fontWeight: 700,
-            opacity: user ? 1 : 0.5,
-          }}
-        >
-          更新
-        </button>
       </div>
 
       {showLoading ? (
@@ -774,25 +767,84 @@ export default function MeisiPage() {
                 })}
               </div>
 
-              <div
-                style={{
-                  position: "absolute",
-                  top: "60.2%",
-                  left: "8%",
-                  width: "84%",
-                  paddingRight: "21%",
-                  boxSizing: "border-box",
-                  textAlign: "left",
-                  fontSize: "clamp(8.5px, 1.45vw, 12px)",
-                  lineHeight: 1.28,
-                  color: "#4b5563",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}
-              >
-                {profile.history || ""}
+{/* 活動履歴 */}
+{/* 1. 活動履歴：縦は中央揃え、横は左揃え */}
+            <div
+              style={{
+                position: "absolute",
+                top: "57%",
+                left: "12%",     // ★左側に少し余白を作る
+                width: "76%",    // ★横幅を少し絞ってバランスを調整
+                height: "18%",
+                display: "flex",
+                alignItems: "center",     // ★縦方向は中央揃え
+                justifyContent: "center", // ★文章ブロック自体は真ん中に配置
+                
+                // ★ここがポイント：横方向のテキストを左揃えにする
+                textAlign: "left", 
+                
+                fontSize: "clamp(9px, 1.4vw, 11px)",
+                lineHeight: 1.5,
+                color: "#4b5563",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                overflow: "hidden",
+                pointerEvents: "none",
+              }}
+            >
+              <div style={{ width: "100%" }}>
+                {/* 200文字制限 */}
+                {profile.history ? profile.history.slice(0, 200) : ""}
               </div>
+            </div>
+          {/* 2. トロフィー一覧：サイズアップ ＆ 存在感強化 */}
+            <div style={{
+              position: "absolute",
+              left: "11%",
+              bottom: "13%",   // QRコードの頭と高さを合わせる
+              width: "50%",    // 横幅を少し広げてゆったり並べる
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              alignItems: "center",
+              gap: "10px",     // 間隔を少し広げて見やすく
+              zIndex: 10,
+              // ★隠し味：トロフィーの下にうっすらと高級感のある影を置く
+              filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))",
+            }}>
+              {TROPHY_LIST.map((t) => {
+                // 自分の名刺なら cardCount、相手なら otherCardCount にしてください
+                const isUnlocked = cardCount >= t.threshold; 
+                const Icon = t.icon;
+                return (
+                  <div key={t.id} style={{ 
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    // 獲得済みはクッキリ、未獲得はシルエットとして存在感を残す
+                    opacity: isUnlocked ? 1 : 0.2,
+                    // ★獲得済みはネオンのような強い光を放つ
+                    filter: isUnlocked 
+                      ? `drop-shadow(0 0 10px ${t.color}) drop-shadow(0 0 20px ${t.color}44)` 
+                      : "none",
+                    transition: "all 0.3s ease"
+                  }}>
+                    <Icon 
+                      size={32} // ★デカくしました！（18 -> 26）
+                      color={isUnlocked ? t.color : "#4b5563"} 
+                      // 線の太さを上げて存在感を出す
+                      strokeWidth={isUnlocked ? 2.8 : 1.5} 
+                      fill="none" 
+                    />
+                  </div>
+                );
+              })}
+            </div>
 
+            {/* --- この下にQRコードのボタンが続きます --- */}
+            </div>
+
+              {/* 右下のQRコード（1つに整理しました） */}
               {qrDataUrl && (
                 <button
                   type="button"
@@ -808,8 +860,6 @@ export default function MeisiPage() {
                     background: "transparent",
                     cursor: "pointer",
                   }}
-                  aria-label="QRコードを拡大表示"
-                  title="タップで拡大"
                 >
                   <img
                     src={qrDataUrl}
@@ -849,8 +899,10 @@ export default function MeisiPage() {
               >
                 編集へ
               </button>
-            </div>
+              <div style={{ width: "min(92vw, 420px)" }}>
+            <TrophyGallery count={cardCount} />
           </div>
+            </div>
         </>
       )}
 
