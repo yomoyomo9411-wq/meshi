@@ -1,8 +1,85 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Instagram, Twitter, Link2 } from "lucide-react";
 import type { EncounterDoc } from "../lib/encounterClient";
+
+function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [fontSize, setFontSize] = useState(20);
+
+  useEffect(() => {
+    const resizeText = () => {
+      if (!containerRef.current || !textRef.current) return;
+
+      const maxWidth = containerRef.current.offsetWidth - 4;
+      const maxHeight = containerRef.current.offsetHeight - 2;
+
+      let size = 24; // 仮に大きめでスタート
+      const minSize = 12;
+
+      textRef.current.style.fontSize = size + "px";
+
+      while (
+        (textRef.current.scrollWidth > maxWidth || textRef.current.scrollHeight > maxHeight) &&
+        size > minSize
+      ) {
+        size -= 1;
+        textRef.current.style.fontSize = size + "px";
+      }
+
+      setFontSize(size);
+    };
+
+    resizeText();
+    const timer = setTimeout(resizeText, 50);
+    return () => clearTimeout(timer);
+  }, [text, currentIndex]);
+
+  let textColor = "#ffffff";
+  if (text !== "記録なし") {
+    textColor = currentIndex === 0 ? "#fde68a" : "#38bdf8";
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: "absolute",
+        left: "52%",
+        top: 0,
+        bottom: 0,
+        transform: "translateX(-50%)",
+        width: "210px", // 固定
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        textAlign: "center",
+        overflow: "hidden",
+        pointerEvents: "none",
+        zIndex: 1,
+      }}
+    >
+      <div
+        ref={textRef}
+        style={{
+          fontWeight: 900,
+          fontSize: fontSize,
+          lineHeight: 1.1,
+          textShadow: "0 0 12px rgba(0,0,0,0.5)",
+          color: textColor,
+          wordBreak: "normal",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+
 
 type Props = {
   open: boolean;
@@ -190,60 +267,57 @@ export default function EncounterStoryOverlay({
               backgroundSize: "700px 220px",
               opacity: 0.85,
             }}
-          />
+          />  
+      
+{/* イベント名 + 閉じるボタン エリア */}
+<div
+  style={{
+    position: "relative",
+    zIndex: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between", // 左右に要素を配置
+    padding: "12px 18px", // 上下の余白を少し調整
+    minHeight: 60, // 高さをしっかり確保して名刺との被りを防ぐ
+  }}
+>
+  {/* 1. 左側：イベント名：ラベル */}
+  <div
+    style={{
+      fontSize: 14,
+      fontWeight: 800,
+      opacity: 0.7,
+      color: "#ffffff", // ラベルは常に白
+      zIndex: 2,
+    }}
+  >
+    イベント名：
+  </div>
 
-          {/* イベント名 + 閉じるボタン */}
-          <div
-            style={{
-              position: "relative",
-              zIndex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              padding: "16px 12px 0 18px",
-            }}
-          >
-            {/*
-            {eventLabel ? (
-              <div
-                style={{
-                  maxWidth: "72%",
-                  fontWeight: 900,
-                  fontSize: 15,
-                  color: "#fde68a",
-                  letterSpacing: "0.02em",
-                  lineHeight: 1.2,
-                  textShadow: "0 0 10px rgba(0,0,0,0.25)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {eventLabel}
-              </div>
-            ) : (
-              <div />
-            )}
-          */}
+  {/* 2. 中央（自動文字サイズ調整）：イベント名 */}
+  <AutoFontDiv text={eventLabel || "記録なし"} currentIndex={currentIndex} />
 
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 999,
-                border: "none",
-                background: "rgba(255,255,255,0.12)",
-                color: "white",
-                fontSize: 24,
-                lineHeight: 1,
-                cursor: "pointer",
-              }}
-            >
-              ×
-            </button>
-          </div>
+  {/* 3. 右側：✖ボタン */}
+  <button
+    type="button"
+    onClick={onClose}
+    style={{
+      width: 40,
+      height: 40,
+      borderRadius: "50%",
+      border: "none",
+      background: "rgba(255,255,255,0.12)",
+      color: "white",
+      fontSize: 22,
+      display: "grid",
+      placeItems: "center",
+      cursor: "pointer",
+      zIndex: 2,
+    }}
+  >
+    ×
+  </button>
+</div>
 
           {/* 名刺UI */}
           <div
@@ -542,3 +616,7 @@ export default function EncounterStoryOverlay({
     </div>
   );
 }
+
+
+
+
