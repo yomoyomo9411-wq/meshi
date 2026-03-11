@@ -558,13 +558,24 @@ export default function MyPage() {
               />
 
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6 }}>
-                  名前（必須）
-                </div>
+  {/* ここを書き換え */}
+  <div style={{ 
+    fontSize: 14, 
+    opacity: 0.9, 
+    marginBottom: 6,
+    display: "flex",       /* 横並びにする */
+    alignItems: "baseline" /* 下のラインを揃える */
+  }}>
+    <span>名前（必須）</span>
+    {/* 文字数カウントを追加 */}
+    <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 8 }}>
+      ({profile.name.length} / 10)
+    </span>
+  </div>
 
                 <input
                   value={profile.name}
-                  maxLength={20}
+                  maxLength={10}
                   onChange={(e) =>
                     setProfile((p) => ({ ...p, name: e.target.value }))
                   }
