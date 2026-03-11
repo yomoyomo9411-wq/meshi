@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import { Instagram, Twitter, Link2 } from "lucide-react";
+import { Instagram, Twitter, Link2, Github } from "lucide-react";
 import type { EncounterDoc } from "../lib/encounterClient";
 
 type Props = {
@@ -95,13 +95,34 @@ export default function EncounterStoryOverlay({
         icon: Twitter,
       },
       {
-        label: "その他SNS",
+        label: "GitHub",
+        value: parsed.otherSns,
+        href: buildHref(parsed.otherSns),
+        icon: Github,
+      },
+      {
+        label: "Link",
         value: parsed.otherSns,
         href: buildHref(parsed.otherSns),
         icon: Link2,
       },
-    ].filter((item) => item.value.trim().length > 0 && item.href);
+    ]
+      .filter((item) => item.value.trim().length > 0 && item.href)
+      .filter((item, index, arr) => {
+        if (item.label !== "Link") return true;
+        return !arr.some((x) => x.label === "GitHub");
+      });
   }, [current?.snapshot?.sns]);
+
+  const snapshotCardBaseSrc = useMemo(() => {
+    if (current?.snapshot?.cardDesign === "card-base3") {
+      return "/card-base3.png";
+    }
+    if (current?.snapshot?.cardDesign === "card-base2") {
+      return "/cars-base2.png";
+    }
+    return "/card-base.png";
+  }, [current?.snapshot?.cardDesign]);
 
   if (!open || !current) return null;
 
@@ -192,7 +213,6 @@ export default function EncounterStoryOverlay({
             }}
           />
 
-          {/* イベント名 + 閉じるボタン */}
           <div
             style={{
               position: "relative",
@@ -203,10 +223,10 @@ export default function EncounterStoryOverlay({
               padding: "16px 12px 0 18px",
             }}
           >
-            {/*
             {eventLabel ? (
               <div
                 style={{
+                  marginRight: "auto",
                   maxWidth: "72%",
                   fontWeight: 900,
                   fontSize: 15,
@@ -224,7 +244,6 @@ export default function EncounterStoryOverlay({
             ) : (
               <div />
             )}
-          */}
 
             <button
               type="button"
@@ -245,7 +264,6 @@ export default function EncounterStoryOverlay({
             </button>
           </div>
 
-          {/* 名刺UI */}
           <div
             key={`${current.id ?? "item"}-${currentIndex}`}
             style={{
@@ -266,7 +284,7 @@ export default function EncounterStoryOverlay({
               }}
             >
               <img
-                src="/card-base.png"
+                src={snapshotCardBaseSrc}
                 alt="card-base"
                 style={{
                   width: "100%",
@@ -276,7 +294,6 @@ export default function EncounterStoryOverlay({
                 }}
               />
 
-              {/* 上部情報バー */}
               <div
                 style={{
                   position: "absolute",
@@ -317,24 +334,22 @@ export default function EncounterStoryOverlay({
                 </div>
               </div>
 
-              {/* アイコン */}
               <div
                 style={{
-    position: "absolute",
-    top: "13.2%",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "23.8%",
-    aspectRatio: "1 / 1",
-    borderRadius: "999px",
-    overflow: "hidden",
-    background: "#241672",
-
-    boxShadow:
-      currentIndex === 0
-        ? "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)"
-        : "0 0 0 6px rgba(125,211,252,0.35), 0 0 30px rgba(125,211,252,0.55), 0 0 70px rgba(125,211,252,0.35)",
-  }}
+                  position: "absolute",
+                  top: "13.2%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "23.8%",
+                  aspectRatio: "1 / 1",
+                  borderRadius: "999px",
+                  overflow: "hidden",
+                  background: "#241672",
+                  boxShadow:
+                    currentIndex === 0
+                      ? "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)"
+                      : "0 0 0 6px rgba(125,211,252,0.35), 0 0 30px rgba(125,211,252,0.55), 0 0 70px rgba(125,211,252,0.35)",
+                }}
               >
                 {current.snapshot?.photoURL ? (
                   <img
@@ -349,7 +364,6 @@ export default function EncounterStoryOverlay({
                 ) : null}
               </div>
 
-              {/* 名前 */}
               <div
                 style={{
                   position: "absolute",
@@ -368,7 +382,6 @@ export default function EncounterStoryOverlay({
                 {current.snapshot?.name || "名前未設定"}
               </div>
 
-              {/* 所属 */}
               <div
                 style={{
                   position: "absolute",
@@ -388,7 +401,6 @@ export default function EncounterStoryOverlay({
                 {current.snapshot?.affiliation || "所属未設定"}
               </div>
 
-              {/* SNS アイコン */}
               <div
                 style={{
                   position: "absolute",
@@ -407,7 +419,7 @@ export default function EncounterStoryOverlay({
 
                   return (
                     <a
-                      key={item.label}
+                      key={`${item.label}-${item.href}`}
                       href={item.href}
                       target="_blank"
                       rel="noreferrer"
@@ -458,7 +470,6 @@ export default function EncounterStoryOverlay({
                 })}
               </div>
 
-              {/* 活動履歴 */}
               <div
                 style={{
                   position: "absolute",
@@ -478,7 +489,6 @@ export default function EncounterStoryOverlay({
             </div>
           </div>
 
-          {/* 下中央のページ表示だけ残す */}
           {items.length > 1 && (
             <div
               style={{
@@ -494,34 +504,31 @@ export default function EncounterStoryOverlay({
               }}
             >
               <div
-  style={{
-    textAlign: "center",
-    fontSize: 13,
-    fontWeight: 800,
-    color: currentIndex === 0 ? "#fde68a" : "#ffffff", // ← NEW! は黄色、それ以外は黒
-    padding: "4px 12px",
-    borderRadius: 999,
-
-    background: "rgba(0,0,0,0.45)",
-
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
-
-    border: "1px solid rgba(255,255,255,0.25)",
-
-    textShadow: currentIndex === 0
-      ? "0 0 8px rgba(253,230,138,0.6)"
-      : "none", // NEW! のときだけ光らせる
-    boxShadow: `
-      inset 0 1px 0 rgba(255,255,255,0.2),
-      0 6px 16px rgba(0,0,0,0.4)
-    `,
-  }}
->
-  {currentIndex === 0
-    ? "NEW!"
-    : `${currentIndex + 1} / ${items.length}`}
-</div>
+                style={{
+                  textAlign: "center",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: currentIndex === 0 ? "#fde68a" : "#ffffff",
+                  padding: "4px 12px",
+                  borderRadius: 999,
+                  background: "rgba(0,0,0,0.45)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  textShadow:
+                    currentIndex === 0
+                      ? "0 0 8px rgba(253,230,138,0.6)"
+                      : "none",
+                  boxShadow: `
+                    inset 0 1px 0 rgba(255,255,255,0.2),
+                    0 6px 16px rgba(0,0,0,0.4)
+                  `,
+                }}
+              >
+                {currentIndex === 0
+                  ? "NEW!"
+                  : `${currentIndex + 1} / ${items.length}`}
+              </div>
             </div>
           )}
         </div>
