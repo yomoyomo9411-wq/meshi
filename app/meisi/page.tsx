@@ -798,6 +798,50 @@ export default function MeisiPage() {
                   {profile.history ? profile.history.slice(0, 200) : ""}
                 </div>
               </div>
+            </div>
+          {/* 2. トロフィー一覧：サイズアップ ＆ 存在感強化 */}
+            <div style={{
+              position: "absolute",
+              left: "11%",
+              bottom: "17%",   // QRコードの頭と高さを合わせる
+              width: "50%",    // 横幅を少し広げてゆったり並べる
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-start",
+              alignItems: "center",
+              gap: "10px",     // 間隔を少し広げて見やすく
+              zIndex: 10,
+              // ★隠し味：トロフィーの下にうっすらと高級感のある影を置く
+              filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))",
+            }}>
+              {TROPHY_LIST.map((t) => {
+                // 自分の名刺なら cardCount、相手なら otherCardCount にしてください
+                const isUnlocked = cardCount >= t.threshold; 
+                const Icon = t.icon;
+                return (
+                  <div key={t.id} style={{ 
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    // 獲得済みはクッキリ、未獲得はシルエットとして存在感を残す
+                    opacity: isUnlocked ? 1 : 0.2,
+                    // ★獲得済みはネオンのような強い光を放つ
+                    filter: isUnlocked 
+                      ? `drop-shadow(0 0 10px ${t.color}) drop-shadow(0 0 20px ${t.color}44)` 
+                      : "none",
+                    transition: "all 0.3s ease"
+                  }}>
+                    <Icon 
+                      size={32} // ★デカくしました！（18 -> 26）
+                      color={isUnlocked ? t.color : "#4b5563"} 
+                      // 線の太さを上げて存在感を出す
+                      strokeWidth={isUnlocked ? 2.8 : 1.5} 
+                      fill="none" 
+                    />
+                  </div>
+                );
+              })}
+            </div>
 
               <div
                 style={{
