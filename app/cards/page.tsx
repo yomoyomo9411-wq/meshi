@@ -466,31 +466,46 @@ export default function CardsPage() {
               </button>
 
               <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, opacity: 0.95 }}>
-                  イベント名
-                </div>
+  {/* display: flex にして gap で少しだけ隙間を作る */}
+  <div style={{ 
+    display: "flex", 
+    alignItems: "center", 
+    gap: 15,           /* 文字の間の隙間を 6px に設定 */
+    paddingTop: 8,
+    marginBottom: 2, 
+    fontSize: 13, 
+    fontWeight: 800, 
+    opacity: 0.95 
+  }}>
+    <span>イベント名</span>
+    {/* すぐ隣に表示される */}
+    <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 400 }}>
+      ({(eventInputs[item.id] ?? "").length}/15)
+    </span>
+  </div>
 
-                <input
-                  value={eventInputs[item.id] ?? ""}
-                  onChange={(e) =>
-                    setEventInputs((prev) => ({
-                      ...prev,
-                      [item.id]: e.target.value,
-                    }))
-                  }
-                  placeholder="例）ハッカソンで会った / 富山市のカフェで会った"
-                  style={{
-                    width: "100%",
-                    padding: "12px 14px",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    background: "rgba(0,0,0,0.22)",
-                    color: "white",
-                    outline: "none",
-                    fontSize: 14,
-                    boxSizing: "border-box",
-                  }}
-                />
+  <input
+    value={eventInputs[item.id] ?? ""}
+    maxLength={15}
+    onChange={(e) =>
+      setEventInputs((prev) => ({
+        ...prev,
+        [item.id]: e.target.value,
+      }))
+    }
+    placeholder="例）ハッカソンで会った / 富山市のカフェで会った"
+    style={{
+      width: "100%",
+      padding: "12px 14px",
+      borderRadius: 12,
+      border: "1px solid rgba(255,255,255,0.12)",
+      background: "rgba(0,0,0,0.22)",
+      color: "white",
+      outline: "none",
+      fontSize: 14,
+      boxSizing: "border-box",
+    }}
+  />
 
                 <button
                   onClick={() => saveEventName(item.id)}
