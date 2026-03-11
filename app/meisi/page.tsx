@@ -801,7 +801,7 @@ export default function MeisiPage() {
             <div style={{
               position: "absolute",
               left: "11%",
-              bottom: "13%",   // QRコードの頭と高さを合わせる
+              bottom: "17%",   // QRコードの頭と高さを合わせる
               width: "50%",    // 横幅を少し広げてゆったり並べる
               display: "flex",
               flexDirection: "row",
