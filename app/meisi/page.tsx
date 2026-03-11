@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { TROPHY_LIST } from "../achivements/constants";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import {
   Home,
@@ -23,9 +22,9 @@ import {
   type ProfileDoc,
   type CardDesignType,
 } from "../lib/profileClient";
-
-import { TrophyGallery } from "../achivements/TrophyGallery";
 import { fetchLatestCardsByOwner } from "../lib/encounterClient";
+import { TROPHY_LIST } from "../achivements/constants";
+import { TrophyGallery } from "../achivements/TrophyGallery";
 
 const defaultProfile: ProfileDoc & { cardDesign: CardDesignType } = {
   name: "",
@@ -52,6 +51,31 @@ function normalizeHref(value: string) {
   return "";
 }
 
+function parseSns(raw?: string) {
+  if (!raw?.trim()) {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      instagram: parsed?.instagram ?? "",
+      x: parsed?.x ?? "",
+      otherSns: parsed?.otherSns ?? "",
+    };
+  } catch {
+    return {
+      instagram: "",
+      x: "",
+      otherSns: raw ?? "",
+    };
+  }
+}
+
 export default function MeisiPage() {
   const router = useRouter();
 
@@ -63,8 +87,8 @@ export default function MeisiPage() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [qrDataUrl, setQrDataUrl] = useState<string>("");
-  const [qrText, setQrText] = useState<string>("");
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const [qrText, setQrText] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
@@ -76,45 +100,27 @@ export default function MeisiPage() {
   );
 
   const snsLinks = useMemo<SnsItem[]>(() => {
-    return (profile.sns ?? "")
-      .split(/\n|,/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((raw) => {
-        const href = normalizeHref(raw);
-        if (!href) return null;
+    const parsed = parseSns(profile.sns ?? "");
 
-        if (href.includes("instagram.com")) {
-          return {
-            href,
-            label: "Instagram",
-            icon: Instagram,
-          };
-        }
+    const items = [
+      {
+        href: normalizeHref(parsed.instagram),
+        label: "Instagram",
+        icon: Instagram,
+      },
+      {
+        href: normalizeHref(parsed.x),
+        label: "X",
+        icon: Twitter,
+      },
+      {
+        href: normalizeHref(parsed.otherSns),
+        label: parsed.otherSns.includes("github.com") ? "GitHub" : "Link",
+        icon: parsed.otherSns.includes("github.com") ? Github : LinkIcon,
+      },
+    ];
 
-        if (href.includes("x.com") || href.includes("twitter.com")) {
-          return {
-            href,
-            label: "X",
-            icon: Twitter,
-          };
-        }
-
-        if (href.includes("github.com")) {
-          return {
-            href,
-            label: "GitHub",
-            icon: Github,
-          };
-        }
-
-        return {
-          href,
-          label: "Link",
-          icon: LinkIcon,
-        };
-      })
-      .filter(Boolean) as SnsItem[];
+    return items.filter((item) => item.href);
   }, [profile.sns]);
 
   const loadFromFirestore = async (uid: string) => {
@@ -214,8 +220,6 @@ export default function MeisiPage() {
     };
   }, [user]);
 
-  const showLoading = !loadedAuth || loadingProfile;
-
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setQrOpen(false);
@@ -223,6 +227,8 @@ export default function MeisiPage() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  const showLoading = !loadedAuth || loadingProfile;
 
   const cardBaseSrc =
     profile.cardDesign === "card-base3"
@@ -287,9 +293,7 @@ export default function MeisiPage() {
     isActive: boolean,
     isPressed: boolean
   ): React.CSSProperties => {
-    if (!isPressed) {
-      return isActive ? activeNavButton : navButtonBase;
-    }
+    if (!isPressed) return isActive ? activeNavButton : navButtonBase;
 
     return {
       ...(isActive ? activeNavButton : navButtonBase),
@@ -523,25 +527,11 @@ export default function MeisiPage() {
       </div>
 
       {showLoading ? (
-        <div
-          style={{
-            marginTop: 16,
-            opacity: 0.9,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
           読み込み中…
         </div>
       ) : !user ? (
-        <div
-          style={{
-            marginTop: 16,
-            opacity: 0.9,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
           ログインしていないため名刺を表示できません。
           <div style={{ marginTop: 12 }}>
             <button
@@ -566,14 +556,7 @@ export default function MeisiPage() {
           )}
         </div>
       ) : !hasProfile ? (
-        <div
-          style={{
-            marginTop: 16,
-            opacity: 0.9,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
+        <div style={{ marginTop: 16, opacity: 0.9, position: "relative", zIndex: 1 }}>
           プロフィールが未設定です。編集画面で保存してください。
           <div style={{ marginTop: 12 }}>
             <button
@@ -798,50 +781,6 @@ export default function MeisiPage() {
                   {profile.history ? profile.history.slice(0, 200) : ""}
                 </div>
               </div>
-            </div>
-          {/* 2. トロフィー一覧：サイズアップ ＆ 存在感強化 */}
-            <div style={{
-              position: "absolute",
-              left: "11%",
-              bottom: "17%",   // QRコードの頭と高さを合わせる
-              width: "50%",    // 横幅を少し広げてゆったり並べる
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "flex-start",
-              alignItems: "center",
-              gap: "10px",     // 間隔を少し広げて見やすく
-              zIndex: 10,
-              // ★隠し味：トロフィーの下にうっすらと高級感のある影を置く
-              filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))",
-            }}>
-              {TROPHY_LIST.map((t) => {
-                // 自分の名刺なら cardCount、相手なら otherCardCount にしてください
-                const isUnlocked = cardCount >= t.threshold; 
-                const Icon = t.icon;
-                return (
-                  <div key={t.id} style={{ 
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    // 獲得済みはクッキリ、未獲得はシルエットとして存在感を残す
-                    opacity: isUnlocked ? 1 : 0.2,
-                    // ★獲得済みはネオンのような強い光を放つ
-                    filter: isUnlocked 
-                      ? `drop-shadow(0 0 10px ${t.color}) drop-shadow(0 0 20px ${t.color}44)` 
-                      : "none",
-                    transition: "all 0.3s ease"
-                  }}>
-                    <Icon 
-                      size={32} // ★デカくしました！（18 -> 26）
-                      color={isUnlocked ? t.color : "#4b5563"} 
-                      // 線の太さを上げて存在感を出す
-                      strokeWidth={isUnlocked ? 2.8 : 1.5} 
-                      fill="none" 
-                    />
-                  </div>
-                );
-              })}
-            </div>
 
               <div
                 style={{
