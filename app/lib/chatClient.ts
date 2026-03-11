@@ -90,7 +90,8 @@ export async function sendMessage(
 
 // チャットを開いたとき未読を0にする
 export async function markAsRead(roomId: string, uid: string) {
-  await updateDoc(doc(db, "chatRooms", roomId), {
+  // updateDoc ではなく setDoc を使い、merge: true を指定する
+  await setDoc(doc(db, "chatRooms", roomId), {
     [`unreadCount_${uid}`]: 0,
-  });
+  }, { merge: true });
 }
