@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-export type CardDesignType = "card-base" | "cars-base2";
+export type CardDesignType = "card-base" | "card-base2" | "card-base3";
 
 export type ProfileDoc = {
   name: string;
@@ -18,9 +18,9 @@ export type ProfileDoc = {
   sns: string;
   history: string;
   photoURL: string; // StorageのURL
-  cardDesign?: CardDesignType; // すでにあるならそのままでOK！
-  updatedAt?: Timestamp;      // そのままでOK！
-  count?: number;             // 🟢 これを新しく書き加えます！
+  cardDesign?: CardDesignType;
+  updatedAt?: Timestamp;
+  count?: number;
 };
 
 export async function fetchProfile(uid: string): Promise<ProfileDoc | null> {
@@ -36,8 +36,13 @@ export async function fetchProfile(uid: string): Promise<ProfileDoc | null> {
     history: data.history ?? "",
     photoURL: data.photoURL ?? "",
     cardDesign:
-      data.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
+      data.cardDesign === "card-base3"
+        ? "card-base3"
+        : data.cardDesign === "card-base2"
+        ? "card-base2"
+        : "card-base",
     updatedAt: data.updatedAt,
+    count: typeof data.count === "number" ? data.count : 0,
   };
 }
 
@@ -47,7 +52,11 @@ export async function saveProfile(uid: string, data: ProfileDoc) {
     {
       ...data,
       cardDesign:
-        data.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
+        data.cardDesign === "card-base3"
+          ? "card-base3"
+          : data.cardDesign === "card-base2"
+          ? "card-base2"
+          : "card-base",
       updatedAt: serverTimestamp(),
     },
     { merge: true }
