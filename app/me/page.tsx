@@ -9,7 +9,6 @@ import {
   QrCode,
   MessageCircle,
   IdCard,
-
 } from "lucide-react";
 
 import AuthButton from "../components/AuthButton";
@@ -52,8 +51,10 @@ const cardDesignOptions: {
   label: string;
 }[] = [
   { key: "card-base", src: "/card-base.png", label: "ノーマル" },
-  { key: "cars-base2", src: "/cars-base2.png", label: "和風" },
+  { key: "card-base2", src: "/cars-base2.png", label: "和風" },
+  { key: "card-base3", src: "/card-base3.png", label: "キュート" },
 ];
+
 function parseSns(raw?: string) {
   if (!raw?.trim()) {
     return {
@@ -131,8 +132,11 @@ export default function MyPage() {
             otherSns: sns.otherSns,
             history: p.history ?? "",
             cardDesign:
-
-              p.cardDesign === "cars-base2" ? "cars-base2" : "card-base",
+              p.cardDesign === "card-base3"
+                ? "card-base3"
+                : p.cardDesign === "card-base2"
+                ? "card-base2"
+                : "card-base",
           });
         } else {
           setProfile(defaultProfile);
@@ -151,18 +155,18 @@ export default function MyPage() {
     };
   }, []);
 
-const canSave = useMemo(() => {
-  // 名前がある 且つ 履歴が200文字以内 のときだけOK
-  return profile.name.trim().length > 0 && profile.history.length <= 200;
-}, [profile.name, profile.history]);
+  const canSave = useMemo(() => {
+    return profile.name.trim().length > 0 && profile.history.length <= 200;
+  }, [profile.name, profile.history]);
 
   const save = async () => {
     if (!user) {
       showToast("先にログインしてください");
       return;
     }
+
     if (!canSave) {
-      showToast("名前は必須です。");
+      showToast("名前は必須で、活動履歴は200文字以内です。");
       return;
     }
 
@@ -593,6 +597,13 @@ const canSave = useMemo(() => {
             />
 
             <Field
+              label="Instagram（任意）"
+              value={profile.instagram}
+              onChange={(v) => setProfile((p) => ({ ...p, instagram: v }))}
+              placeholder="例）https://instagram.com/xxxx"
+            />
+
+            <Field
               label="X（任意）"
               value={profile.x}
               onChange={(v) => setProfile((p) => ({ ...p, x: v }))}
@@ -600,7 +611,7 @@ const canSave = useMemo(() => {
             />
 
             <Field
-              label="GitHub（任意）"           
+              label="GitHub（任意）"
               value={profile.otherSns}
               onChange={(v) => setProfile((p) => ({ ...p, otherSns: v }))}
               placeholder="例）https://github.com/xxxx"
@@ -613,7 +624,7 @@ const canSave = useMemo(() => {
               placeholder={
                 "例）\n・ハッカソン参加\n・映像制作\n・IoTプロトタイピング など"
               }
-              maxLength={200} 
+              maxLength={200}
             />
 
             <div style={{ marginTop: 16 }}>
@@ -938,10 +949,16 @@ function Field(props: {
 }) {
   return (
     <div style={{ marginTop: 12 }}>
-      {/* 🟢 alignItems: "baseline" で文字の下のラインを揃えます */}
-      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6, display: "flex", alignItems: "baseline" }}>
+      <div
+        style={{
+          fontSize: 14,
+          opacity: 0.9,
+          marginBottom: 6,
+          display: "flex",
+          alignItems: "baseline",
+        }}
+      >
         <span>{props.label}</span>
-        {/* 🟢 200の方に合わせて、横並びでカッコ付きに統一 */}
         {props.maxLength && (
           <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 8 }}>
             ({props.value.length} / {props.maxLength})
@@ -977,8 +994,15 @@ function TextAreaField(props: {
 }) {
   return (
     <div style={{ marginTop: 12 }}>
-      {/* 🟢 こちらも同様に Flexbox で位置を整えます */}
-      <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 6, display: "flex", alignItems: "baseline" }}>
+      <div
+        style={{
+          fontSize: 14,
+          opacity: 0.9,
+          marginBottom: 6,
+          display: "flex",
+          alignItems: "baseline",
+        }}
+      >
         <span>{props.label}</span>
         {props.maxLength && (
           <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 8 }}>
@@ -1001,7 +1025,7 @@ function TextAreaField(props: {
           color: "white",
           outline: "none",
           fontSize: 15,
-          resize: "none", // スマホで崩れないように固定するのがおすすめ
+          resize: "none",
         }}
       />
     </div>

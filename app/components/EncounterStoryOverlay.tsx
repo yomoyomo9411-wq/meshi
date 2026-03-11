@@ -1,11 +1,17 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Instagram, Twitter, Link2 } from "lucide-react";
+import { Instagram, Twitter, Link2, Github } from "lucide-react";
 import { TROPHY_LIST } from "../achivements/constants";
 import type { EncounterDoc } from "../lib/encounterClient";
 
-function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: number }) {
+function AutoFontDiv({
+  text,
+  currentIndex,
+}: {
+  text: string;
+  currentIndex: number;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [fontSize, setFontSize] = useState(20);
@@ -17,13 +23,14 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
       const maxWidth = containerRef.current.offsetWidth - 4;
       const maxHeight = containerRef.current.offsetHeight - 2;
 
-      let size = 24; // 仮に大きめでスタート
+      let size = 24;
       const minSize = 12;
 
       textRef.current.style.fontSize = size + "px";
 
       while (
-        (textRef.current.scrollWidth > maxWidth || textRef.current.scrollHeight > maxHeight) &&
+        (textRef.current.scrollWidth > maxWidth ||
+          textRef.current.scrollHeight > maxHeight) &&
         size > minSize
       ) {
         size -= 1;
@@ -52,7 +59,7 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
         top: 0,
         bottom: 0,
         transform: "translateX(-50%)",
-        width: "210px", // 固定
+        width: "210px",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -66,7 +73,7 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
         ref={textRef}
         style={{
           fontWeight: 900,
-          fontSize: fontSize,
+          fontSize,
           lineHeight: 1.1,
           textShadow: "0 0 12px rgba(0,0,0,0.5)",
           color: textColor,
@@ -79,8 +86,6 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
     </div>
   );
 }
-
-
 
 type Props = {
   open: boolean;
@@ -174,13 +179,34 @@ const current = items[currentIndex];
         icon: Twitter,
       },
       {
-        label: "その他SNS",
+        label: "GitHub",
+        value: parsed.otherSns,
+        href: buildHref(parsed.otherSns),
+        icon: Github,
+      },
+      {
+        label: "Link",
         value: parsed.otherSns,
         href: buildHref(parsed.otherSns),
         icon: Link2,
       },
-    ].filter((item) => item.value.trim().length > 0 && item.href);
+    ]
+      .filter((item) => item.value.trim().length > 0 && item.href)
+      .filter((item, _index, arr) => {
+        if (item.label !== "Link") return true;
+        return !arr.some((x) => x.label === "GitHub");
+      });
   }, [current?.snapshot?.sns]);
+
+  const snapshotCardBaseSrc = useMemo(() => {
+    if (current?.snapshot?.cardDesign === "card-base3") {
+      return "/card-base3.png";
+    }
+    if (current?.snapshot?.cardDesign === "card-base2") {
+      return "/cars-base2.png";
+    }
+    return "/card-base.png";
+  }, [current?.snapshot?.cardDesign]);
 
   if (!open || !current) return null;
 
@@ -325,6 +351,7 @@ const current = items[currentIndex];
 
           {/* 名刺UI */}
           {/* 🟢 修正箇所：名刺全体を包むスクロールコンテナ */}
+
           <div
             key={`${current.id ?? "item"}-${currentIndex}`}
             style={{
@@ -350,7 +377,7 @@ const current = items[currentIndex];
               }}
             >
               <img
-                src="/card-base.png"
+                src={snapshotCardBaseSrc}
                 alt="card-base"
                 style={{
                   width: "100%",
@@ -360,7 +387,6 @@ const current = items[currentIndex];
                 }}
               />
 
-              {/* 上部情報バー */}
               <div
                 style={{
                   position: "absolute",
@@ -401,24 +427,22 @@ const current = items[currentIndex];
                 </div>
               </div>
 
-              {/* アイコン */}
               <div
                 style={{
-    position: "absolute",
-    top: "13.2%",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "23.8%",
-    aspectRatio: "1 / 1",
-    borderRadius: "999px",
-    overflow: "hidden",
-    background: "#241672",
-
-    boxShadow:
-      currentIndex === 0
-        ? "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)"
-        : "0 0 0 6px rgba(125,211,252,0.35), 0 0 30px rgba(125,211,252,0.55), 0 0 70px rgba(125,211,252,0.35)",
-  }}
+                  position: "absolute",
+                  top: "13.2%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "23.8%",
+                  aspectRatio: "1 / 1",
+                  borderRadius: "999px",
+                  overflow: "hidden",
+                  background: "#241672",
+                  boxShadow:
+                    currentIndex === 0
+                      ? "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)"
+                      : "0 0 0 6px rgba(125,211,252,0.35), 0 0 30px rgba(125,211,252,0.55), 0 0 70px rgba(125,211,252,0.35)",
+                }}
               >
                 {current.snapshot?.photoURL ? (
                   <img
@@ -433,7 +457,6 @@ const current = items[currentIndex];
                 ) : null}
               </div>
 
-              {/* 名前 */}
               <div
                 style={{
                   position: "absolute",
@@ -452,7 +475,6 @@ const current = items[currentIndex];
                 {current.snapshot?.name || "名前未設定"}
               </div>
 
-              {/* 所属 */}
               <div
                 style={{
                   position: "absolute",
@@ -472,7 +494,6 @@ const current = items[currentIndex];
                 {current.snapshot?.affiliation || "所属未設定"}
               </div>
 
-              {/* SNS アイコン */}
               <div
                 style={{
                   position: "absolute",
@@ -491,7 +512,7 @@ const current = items[currentIndex];
 
                   return (
                     <a
-                      key={item.label}
+                      key={`${item.label}-${item.href}`}
                       href={item.href}
                       target="_blank"
                       rel="noreferrer"
@@ -581,8 +602,7 @@ const current = items[currentIndex];
                 })}
               </div>
               {/* --- 🟢 ここまで --- */}
-
-              {/* 🟢 修正箇所：文字ではなく名刺全体が動くように設定を固定 */}
+              
               <div
                 style={{
                   position: "absolute",
@@ -605,7 +625,6 @@ const current = items[currentIndex];
             </div>
           </div>
 
-          {/* 下中央のページ表示だけ残す */}
           {items.length > 1 && (
             <div
               style={{
@@ -621,34 +640,31 @@ const current = items[currentIndex];
               }}
             >
               <div
-  style={{
-    textAlign: "center",
-    fontSize: 13,
-    fontWeight: 800,
-    color: currentIndex === 0 ? "#fde68a" : "#ffffff", // ← NEW! は黄色、それ以外は黒
-    padding: "4px 12px",
-    borderRadius: 999,
-
-    background: "rgba(0,0,0,0.45)",
-
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
-
-    border: "1px solid rgba(255,255,255,0.25)",
-
-    textShadow: currentIndex === 0
-      ? "0 0 8px rgba(253,230,138,0.6)"
-      : "none", // NEW! のときだけ光らせる
-    boxShadow: `
-      inset 0 1px 0 rgba(255,255,255,0.2),
-      0 6px 16px rgba(0,0,0,0.4)
-    `,
-  }}
->
-  {currentIndex === 0
-    ? "NEW!"
-    : `${currentIndex + 1} / ${items.length}`}
-</div>
+                style={{
+                  textAlign: "center",
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: currentIndex === 0 ? "#fde68a" : "#ffffff",
+                  padding: "4px 12px",
+                  borderRadius: 999,
+                  background: "rgba(0,0,0,0.45)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.25)",
+                  textShadow:
+                    currentIndex === 0
+                      ? "0 0 8px rgba(253,230,138,0.6)"
+                      : "none",
+                  boxShadow: `
+                    inset 0 1px 0 rgba(255,255,255,0.2),
+                    0 6px 16px rgba(0,0,0,0.4)
+                  `,
+                }}
+              >
+                {currentIndex === 0
+                  ? "NEW!"
+                  : `${currentIndex + 1} / ${items.length}`}
+              </div>
             </div>
           )}
         </div>
@@ -669,7 +685,3 @@ const current = items[currentIndex];
     </div>
   );
 }
-
-
-
-

@@ -9,10 +9,10 @@ import {
   updateDoc,
   where,
   doc,
-  increment, // 🟢 追加：数値を増やすために必要
+  increment,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { fetchProfile } from "./profileClient";
+import { fetchProfile, type CardDesignType } from "./profileClient";
 
 export type EncounterSnapshot = {
   name: string;
@@ -20,8 +20,8 @@ export type EncounterSnapshot = {
   sns: string;
   history: string;
   photoURL: string;
-  cardDesign: string; // 🟢 追加
-  count: number;      // 🟢 追加
+  cardDesign: CardDesignType;
+  count: number;
 };
 
 export type EncounterDoc = {
@@ -37,22 +37,24 @@ export type EncounterDoc = {
   snapshot: EncounterSnapshot;
 };
 
-/**
- * 交換処理のメイン関数
- */
 export async function createEncounter(
   ownerUid: string,
   otherUid: string,
   eventName?: string
 ) {
-  
-  // 1. 位置情報と住所の取得
-    const { lat, lng } = await getCurrentPositionStrict(); 
+  const { lat, lng } = await getCurrentPositionStrict();
   const address = await reverseGeocode(lat, lng);
 
-  // 2. お互いの最新プロフィールを取得
   const ownerProfile = await fetchProfile(ownerUid);
   const otherProfile = await fetchProfile(otherUid);
+
+  const normalizeCardDesign = (
+    design?: CardDesignType
+  ): CardDesignType => {
+    if (design === "card-base3") return "card-base3";
+    if (design === "card-base2") return "card-base2";
+    return "card-base";
+  };
 
   const snapshotForOwner: EncounterSnapshot = {
     name: otherProfile?.name ?? "",
@@ -60,7 +62,7 @@ export async function createEncounter(
     sns: otherProfile?.sns ?? "",
     history: otherProfile?.history ?? "",
     photoURL: otherProfile?.photoURL ?? "",
-    cardDesign: otherProfile?.cardDesign ?? "card-base", // 相手のデザインIDを保存
+    cardDesign: normalizeCardDesign(otherProfile?.cardDesign),
     count: otherProfile?.count ?? 0,
   };
 
@@ -70,24 +72,21 @@ export async function createEncounter(
     sns: ownerProfile?.sns ?? "",
     history: ownerProfile?.history ?? "",
     photoURL: ownerProfile?.photoURL ?? "",
-    cardDesign: ownerProfile?.cardDesign ?? "card-base", // あなたのデザインIDを保存
-    count: ownerProfile?.count ?? 0,                  // あなたのカウントを保存
+    cardDesign: normalizeCardDesign(ownerProfile?.cardDesign),
+    count: ownerProfile?.count ?? 0,
   };
 
-  // 🟢 3. 初回交換チェック (自分から見て相手と過去に接触があるか)
   const qFirstCheck = query(
     collection(db, "encounters"),
     where("ownerUid", "==", ownerUid),
     where("otherUid", "==", otherUid)
   );
   const existingDocs = await getDocs(qFirstCheck);
-  const isFirstTime = existingDocs.empty; // 過去に1件もなければ初回
+  const isFirstTime = existingDocs.empty;
 
-  // 4. 古い「最新フラグ」を解除
   await clearLatestEncounter(ownerUid, otherUid);
   await clearLatestEncounter(otherUid, ownerUid);
 
-  // 5. 交換履歴を作成 (自分の分)
   await addDoc(collection(db, "encounters"), {
     ownerUid,
     otherUid,
@@ -101,7 +100,6 @@ export async function createEncounter(
     snapshot: snapshotForOwner,
   });
 
-  // 6. 交換履歴を作成 (相手の分)
   await addDoc(collection(db, "encounters"), {
     ownerUid: otherUid,
     otherUid: ownerUid,
@@ -115,27 +113,22 @@ export async function createEncounter(
     snapshot: snapshotForOther,
   });
 
-  // 🟢 7. 初回交換なら、お互いのトロフィーカウントを +1 する
   if (isFirstTime) {
-    // 自分のカウントを増やす
     const myProfileRef = doc(db, "profiles", ownerUid);
     await updateDoc(myProfileRef, {
-      count: increment(1)
+      count: increment(1),
     });
 
-    // 相手のカウントを増やす
     const otherProfileRef = doc(db, "profiles", otherUid);
     await updateDoc(otherProfileRef, {
-      count: increment(1)
+      count: increment(1),
     });
-    
+
     console.log("初回交換のため、トロフィーカウントを更新しました。");
   } else {
     console.log("2回目以降の交換のため、カウントは維持します。");
   }
 }
-
-// --- 以下、既存の補助関数（変更なし） ---
 
 async function clearLatestEncounter(ownerUid: string, otherUid: string) {
   const q = query(
@@ -227,15 +220,10 @@ export async function updateEncounterEventName(
   });
 }
 
-/**
- * 位置情報を厳格に取得する関数
- * 取得できない場合はエラーを投げて処理を中断させます
- */
 async function getCurrentPositionStrict(): Promise<{
   lat: number;
   lng: number;
 }> {
-  // ブラウザが位置情報に対応していない場合
   if (!("geolocation" in navigator)) {
     throw new Error("LOCATION_ERROR");
   }
@@ -249,14 +237,13 @@ async function getCurrentPositionStrict(): Promise<{
         });
       },
       (error) => {
-        // 🟢 取得失敗時は fallback を返さず、エラーを投げる
         console.error("位置情報の取得に失敗しました:", error);
         reject(new Error("LOCATION_ERROR"));
       },
       {
-        enableHighAccuracy: true, // 高精度
-        timeout: 8000,            // 8秒待ってダメならタイムアウト
-        maximumAge: 0,            // キャッシュを使わない
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0,
       }
     );
   });
