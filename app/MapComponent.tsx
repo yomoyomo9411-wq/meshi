@@ -78,8 +78,26 @@ export default function MapComponent() {
   const [encounters, setEncounters] = useState<any[]>([]);
 
   const [center, setCenter] = useState<[number, number] | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<string | null>(null);
   const [markerPos, setMarkerPos] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState("現在地を取得中…");
+    // 住所を取得する関数を追加
+  const fetchCurrentAddress = async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { "Accept-Language": "ja" } } // 日本語で取得
+      );
+      const data = await res.json();
+      // 市町村や番地などを抽出（お好みで調整してください）
+      const addr = data.address;
+      const simpleAddress = `${addr.province || ""}${addr.city || addr.town || ""}${addr.neighbourhood || addr.suburb || ""}${addr.house_number || ""}`;
+      setCurrentAddress(data.display_name || "住所が見つかりませんでした");
+    } catch (e) {
+      console.error(e);
+      setCurrentAddress("住所を取得できませんでした");
+    }
+  };
   const [isLocationError, setIsLocationError] = useState(false);
   const [locationReady, setLocationReady] = useState(false);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -526,10 +544,31 @@ export default function MapComponent() {
       <Marker
         position={markerPos}
         icon={StarPinIcon as L.DivIcon}
-        interactive={false}
-      />
+        eventHandlers={{
+          click: () => {
+            // タップした時に住所を取得
+            if (!currentAddress) fetchCurrentAddress(markerPos[0], markerPos[1]);
+          },
+        }}
+      >
+        {/* クラス名 custom-popup を追加 */}
+        <Popup className="custom-popup" minWidth={220}>
+          <div style={{ textAlign: "center", padding: "4px 0" }}>
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", marginBottom: "4px" }}>
+              現在の住所
+            </div>
+            <div style={{ 
+              color: "#bdbdbd", // 星と同じ黄色
+              fontSize: "13px", 
+              fontWeight: 800, 
+              lineHeight: 1.4 
+            }}>
+              {currentAddress ? currentAddress : "住所を読み込み中..."}
+            </div>
+          </div>
+        </Popup>
+      </Marker>
     )}
-
     {!storyOpen &&
       encounters
         .filter((item) => {
@@ -871,6 +910,30 @@ export default function MapComponent() {
           読み込み中…
         </div>
       )}
+
+      {/* ここから追加 */}
+      <style jsx>{`
+        /* 吹き出しの背景を黒っぽく透明にする */
+        :global(.custom-popup .leaflet-popup-content-wrapper) {
+          background: rgba(0, 0, 0, 0.7) !important; /* 黒の70%透明 */
+          backdrop-filter: blur(8px);               /* 背景をぼかす */
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.2) !important; /* 薄い白の枠線 */
+          border-radius: 12px !important;
+        }
+
+        /* 吹き出し下の三角部分も黒く */
+        :global(.custom-popup .leaflet-popup-tip) {
+          background: rgba(0, 0, 0, 0.7) !important;
+        }
+
+        /* 閉じるボタンを白く */
+        :global(.custom-popup .leaflet-popup-close-button) {
+          color: white !important;
+        }
+      `}</style>
+      {/* ここまで追加 */}
+
     </>
   );
 }
