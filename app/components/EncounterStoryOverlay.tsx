@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Instagram, Twitter, Link2 } from "lucide-react";
+import { TROPHY_LIST } from "../achivements/constants";
 import type { EncounterDoc } from "../lib/encounterClient";
 
 function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: number }) {
@@ -131,7 +132,8 @@ export default function EncounterStoryOverlay({
 }: Props) {
   const touchStartXRef = useRef<number | null>(null);
 
-  const current = items[currentIndex];
+  // 🟢 テスト用：自分のデータを無理やり流し込む（後で戻してね！）
+const current = items[currentIndex];
 
   const formatTime = (createdAt: any) => {
     const sec = createdAt?.seconds;
@@ -237,6 +239,8 @@ export default function EncounterStoryOverlay({
             height: "100%",
             width: "100%",
             position: "relative",
+            display: "flex",           // 🟢 追加
+            flexDirection: "column",   // 🟢 追加（上から下に並べる）
             borderRadius: 28,
             overflow: "hidden",
             backgroundColor: "#020617",
@@ -320,15 +324,21 @@ export default function EncounterStoryOverlay({
 </div>
 
           {/* 名刺UI */}
+          {/* 🟢 修正箇所：名刺全体を包むスクロールコンテナ */}
           <div
             key={`${current.id ?? "item"}-${currentIndex}`}
             style={{
-              marginTop: -8,
-              display: "grid",
-              placeItems: "center",
+              flex: 1,
+              overflowY: "auto",         // 縦スクロールを有効化
+              overflowX: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               position: "relative",
               zIndex: 1,
-              padding: "0 14px 12px 14px",
+              padding: "10px 14px 10px 14px", // 下の余白を180pxにして、トロフィーを「NEW!」より上に持ち上げられるように
+              scrollbarWidth: "none",
+              WebkitOverflowScrolling: "touch",
               animation: "luminaCardSlide 0.28s ease",
             }}
           >
@@ -531,20 +541,63 @@ export default function EncounterStoryOverlay({
                   );
                 })}
               </div>
+              {/* --- 🟢 ここからトロフィー表示を追加 --- */}
+              <div style={{
+                position: "absolute",
+                left: "11%",
+                bottom: "13.5%", // 他の画面と位置を合わせる
+                display: "flex",
+                gap: "10px",
+                zIndex: 10,
+              }}>
+                {TROPHY_LIST.map((t) => {
+                  // 保存されたスナップショット内の count を使って判定
+                  // もしエラーが出る場合は (current.snapshot as any).count にしてください
+                  const isUnlocked = (current.snapshot as any).count >= t.threshold; 
+                  const Icon = t.icon;
+                  
+                  // 現在のテーマカラー（最新なら黄色、過去なら青色）
+                  const themeColor = currentIndex === 0 ? "#fde68a" : "#38bdf8";
 
-              {/* 活動履歴 */}
+                  return (
+                    <div key={t.id} style={{ 
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: isUnlocked ? 1 : 0.2,
+                      // 獲得済みなら、そのトロフィーの色でネオンのように光らせる
+                      filter: isUnlocked 
+                        ? `drop-shadow(0 0 10px ${t.color})` 
+                        : "none",
+                      transition: "all 0.3s ease"
+                    }}>
+                      <Icon 
+                        size={26} 
+                        color={isUnlocked ? t.color : "#4b5563"} 
+                        strokeWidth={isUnlocked ? 2.8 : 1.5} 
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {/* --- 🟢 ここまで --- */}
+
+              {/* 🟢 修正箇所：文字ではなく名刺全体が動くように設定を固定 */}
               <div
                 style={{
                   position: "absolute",
                   top: "60.2%",
-                  left: "8%",
-                  width: "84%",
+                  left: "10%",
+                  width: "80%",
+                  height: "28%",       // 名刺の中での高さは維持
+                  overflowY: "hidden", // 🟢 内部スクロールは止める
                   textAlign: "left",
-                  fontSize: "clamp(7.5px, 1.15vw, 10px)",
-                  lineHeight: 1.24,
+                  fontSize: "clamp(8.5px, 1.3vw, 11px)",
+                  lineHeight: 1.5,
                   color: "#4b5563",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
+                  pointerEvents: "none", // 文字の上を触っても名刺全体のスクロールが効くように
                 }}
               >
                 {current.snapshot?.history || ""}
