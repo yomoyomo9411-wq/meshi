@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Instagram, Twitter, Link2, Github } from "lucide-react";
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Instagram, Twitter, Link2 } from "lucide-react";
 import type { EncounterDoc } from "../lib/encounterClient";
 
-function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: number }) {
+function AutoFontDiv({
+  text,
+  currentIndex,
+}: {
+  text: string;
+  currentIndex: number;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [fontSize, setFontSize] = useState(20);
@@ -18,13 +22,14 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
       const maxWidth = containerRef.current.offsetWidth - 4;
       const maxHeight = containerRef.current.offsetHeight - 2;
 
-      let size = 24; // 仮に大きめでスタート
+      let size = 24;
       const minSize = 12;
 
       textRef.current.style.fontSize = size + "px";
 
       while (
-        (textRef.current.scrollWidth > maxWidth || textRef.current.scrollHeight > maxHeight) &&
+        (textRef.current.scrollWidth > maxWidth ||
+          textRef.current.scrollHeight > maxHeight) &&
         size > minSize
       ) {
         size -= 1;
@@ -53,7 +58,7 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
         top: 0,
         bottom: 0,
         transform: "translateX(-50%)",
-        width: "210px", // 固定
+        width: "210px",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -67,7 +72,7 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
         ref={textRef}
         style={{
           fontWeight: 900,
-          fontSize: fontSize,
+          fontSize,
           lineHeight: 1.1,
           textShadow: "0 0 12px rgba(0,0,0,0.5)",
           color: textColor,
@@ -80,8 +85,6 @@ function AutoFontDiv({ text, currentIndex }: { text: string; currentIndex: numbe
     </div>
   );
 }
-
-
 
 type Props = {
   open: boolean;
@@ -187,7 +190,7 @@ export default function EncounterStoryOverlay({
       },
     ]
       .filter((item) => item.value.trim().length > 0 && item.href)
-      .filter((item, index, arr) => {
+      .filter((item, _index, arr) => {
         if (item.label !== "Link") return true;
         return !arr.some((x) => x.label === "GitHub");
       });
@@ -292,107 +295,55 @@ export default function EncounterStoryOverlay({
             }}
           />
 
+          {/* イベント名 + 閉じるボタン */}
           <div
             style={{
               position: "relative",
-              zIndex: 1,
+              zIndex: 10,
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-end",
-              padding: "16px 12px 0 18px",
+              justifyContent: "space-between",
+              padding: "12px 18px",
+              minHeight: 60,
             }}
           >
-            {eventLabel ? (
-              <div
-                style={{
-                  marginRight: "auto",
-                  maxWidth: "72%",
-                  fontWeight: 900,
-                  fontSize: 15,
-                  color: "#fde68a",
-                  letterSpacing: "0.02em",
-                  lineHeight: 1.2,
-                  textShadow: "0 0 10px rgba(0,0,0,0.25)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {eventLabel}
-              </div>
-            ) : (
-              <div />
-            )}
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 800,
+                opacity: 0.7,
+                color: "#ffffff",
+                zIndex: 2,
+              }}
+            >
+              イベント名：
+            </div>
+
+            <AutoFontDiv
+              text={eventLabel || "記録なし"}
+              currentIndex={currentIndex}
+            />
 
             <button
               type="button"
               onClick={onClose}
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 999,
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
                 border: "none",
                 background: "rgba(255,255,255,0.12)",
                 color: "white",
-                fontSize: 24,
-                lineHeight: 1,
+                fontSize: 22,
+                display: "grid",
+                placeItems: "center",
                 cursor: "pointer",
+                zIndex: 2,
               }}
             >
               ×
             </button>
           </div>
-          />  
-      
-{/* イベント名 + 閉じるボタン エリア */}
-<div
-  style={{
-    position: "relative",
-    zIndex: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between", // 左右に要素を配置
-    padding: "12px 18px", // 上下の余白を少し調整
-    minHeight: 60, // 高さをしっかり確保して名刺との被りを防ぐ
-  }}
->
-  {/* 1. 左側：イベント名：ラベル */}
-  <div
-    style={{
-      fontSize: 14,
-      fontWeight: 800,
-      opacity: 0.7,
-      color: "#ffffff", // ラベルは常に白
-      zIndex: 2,
-    }}
-  >
-    イベント名：
-  </div>
-
-  {/* 2. 中央（自動文字サイズ調整）：イベント名 */}
-  <AutoFontDiv text={eventLabel || "記録なし"} currentIndex={currentIndex} />
-
-  {/* 3. 右側：✖ボタン */}
-  <button
-    type="button"
-    onClick={onClose}
-    style={{
-      width: 40,
-      height: 40,
-      borderRadius: "50%",
-      border: "none",
-      background: "rgba(255,255,255,0.12)",
-      color: "white",
-      fontSize: 22,
-      display: "grid",
-      placeItems: "center",
-      cursor: "pointer",
-      zIndex: 2,
-    }}
-  >
-    ×
-  </button>
-</div>
 
           <div
             key={`${current.id ?? "item"}-${currentIndex}`}
@@ -679,7 +630,3 @@ export default function EncounterStoryOverlay({
     </div>
   );
 }
-
-
-
-
