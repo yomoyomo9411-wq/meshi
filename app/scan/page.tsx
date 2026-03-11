@@ -18,6 +18,7 @@ import {
 import { auth } from "../lib/firebase";
 import { fetchProfile, type ProfileDoc } from "../lib/profileClient";
 import { createEncounter } from "../lib/encounterClient";
+import { TROPHY_LIST } from "../achivements/constants";
 
 const defaultProfile: ProfileDoc = {
   name: "",
@@ -192,8 +193,9 @@ export default function ScanPage() {
                 sns: p?.sns ?? "",
                 history: p?.history ?? "",
                 photoURL: p?.photoURL ?? "",
-                cardDesign: p?.cardDesign ?? "card-base", 
-              });
+                cardDesign: p?.cardDesign ?? "card-base",
+    count: p?.count ?? 0, 
+              }as any);
 
               setStatus("読み取り完了。内容を確認して交換してください。");
             } catch (e) {
@@ -609,185 +611,164 @@ export default function ScanPage() {
               />
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                placeItems: "center",
-                width: "100%",
-              }}
-            >
-              <div
-                style={{
-                  position: "relative",
-                  width: "min(92vw, 420px)",
-                  filter: "drop-shadow(0 12px 34px rgba(0,0,0,0.38))",
-                }}
-              >
-                <img
-                  src="/card-base.png"
-                  alt="card-base"
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    display: "block",
-                    borderRadius: 24,
-                  }}
-                />
+<div
+  style={{
+    display: "grid",
+    placeItems: "center",
+    width: "100%",
+  }}
+>
+  <div
+    style={{
+      position: "relative",
+      width: "min(92vw, 420px)",
+      filter: "drop-shadow(0 12px 34px rgba(0,0,0,0.38))",
+    }}
+  >
+    {/* 🟢 1. 背景画像 (1枚に統合) */}
+    <img
+      src={scannedProfile.cardDesign === "cars-base2" ? "/cars-base2.png" : "/card-base.png"}
+      alt="card-base"
+      style={{
+        width: "100%",
+        height: "auto",
+        display: "block",
+        borderRadius: 24,
+      }}
+    />
 
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "13.2%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "23.8%",
-                    aspectRatio: "1 / 1",
-                    borderRadius: "999px",
-                    overflow: "hidden",
-                    background: "#241672",
-                    boxShadow:
-                      "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)",
-                  }}
-                >
-                  {scannedProfile.photoURL ? (
-                    <img
-                      src={scannedProfile.photoURL}
-                      alt="profile"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  ) : null}
-                </div>
+    {/* 🟢 2. プロフィール写真 */}
+    <div
+      style={{
+        position: "absolute",
+        top: "13.2%",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "23.8%",
+        aspectRatio: "1 / 1",
+        borderRadius: "999px",
+        overflow: "hidden",
+        background: "#241672",
+        boxShadow: "0 0 0 6px rgba(255,214,94,0.35), 0 0 30px rgba(255,214,94,0.55), 0 0 70px rgba(255,214,94,0.35)",
+      }}
+    >
+      {scannedProfile.photoURL ? (
+        <img
+          src={scannedProfile.photoURL}
+          alt="profile"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : null}
+    </div>
 
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "31.8%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "78%",
-                    textAlign: "center",
-                    color: "#22196f",
-                    fontWeight: 900,
-                    fontSize: "clamp(26px, 5vw, 42px)",
-                    letterSpacing: "0.04em",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {scannedProfile.name || "名前未設定"}
-                </div>
+    {/* 🟢 3. 名前 */}
+    <div style={{
+      position: "absolute",
+      top: "31.8%",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "78%",
+      textAlign: "center",
+      color: "#22196f",
+      fontWeight: 900,
+      fontSize: "clamp(26px, 5vw, 42px)",
+      letterSpacing: "0.04em",
+      lineHeight: 1.1,
+    }}>
+      {scannedProfile.name || "名前未設定"}
+    </div>
 
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "39.9%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "74%",
-                    textAlign: "center",
-                    color: "#1f174d",
-                    fontWeight: 600,
-                    fontSize: "clamp(9px, 1.7vw, 15px)",
-                    lineHeight: 1.24,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {scannedProfile.affiliation || "所属未設定"}
-                </div>
+    {/* 🟢 4. 所属 (追加) */}
+    <div style={{
+      position: "absolute",
+      top: "39.9%",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "74%",
+      textAlign: "center",
+      color: "#1f174d",
+      fontWeight: 600,
+      fontSize: "clamp(9px, 1.7vw, 15px)",
+      lineHeight: 1.24,
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+    }}>
+      {scannedProfile.affiliation || "所属未設定"}
+    </div>
 
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "47.3%",
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    width: "74%",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "flex-start",
-                    gap: 16,
-                  }}
-                >
-                  {snsLinks.map((item) => {
-                    const Icon = item.icon;
-
-                    return (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={item.label}
-                        title={item.label}
-                        style={{
-                          width: 58,
-                          textDecoration: "none",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "flex-start",
-                          gap: 4,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: "999px",
-                            display: "grid",
-                            placeItems: "center",
-                            background: "rgba(255,255,255,0.72)",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.14)",
-                          }}
-                        >
-                          <Icon
-                            size={18}
-                            strokeWidth={2.2}
-                            style={{ color: "#374151" }}
-                          />
-                        </div>
-
-                        <div
-                          style={{
-                            fontSize: "clamp(8px, 1.25vw, 10px)",
-                            lineHeight: 1.15,
-                            fontWeight: 700,
-                            color: "#4b5563",
-                            textAlign: "center",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {item.label}
-                        </div>
-                      </a>
-                    );
-                  })}
-                </div>
-
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "60.2%",
-                    left: "8%",
-                    width: "84%",
-                    paddingRight: "21%",
-                    boxSizing: "border-box",
-                    textAlign: "left",
-                    fontSize: "clamp(8.5px, 1.45vw, 12px)",
-                    lineHeight: 1.28,
-                    color: "#4b5563",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {scannedProfile.history || ""}
-                </div>
-              </div>
+    {/* 🟢 5. SNSアイコン (追加) */}
+    <div style={{
+      position: "absolute",
+      top: "47.3%",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "74%",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "flex-start",
+      gap: 16,
+    }}>
+      {snsLinks.map((item) => {
+        const Icon = item.icon;
+        return (
+          <a key={item.label} href={item.href} target="_blank" rel="noreferrer" style={{
+            width: 58, textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+          }}>
+            <div style={{ width: 34, height: 34, borderRadius: "999px", display: "grid", placeItems: "center", background: "rgba(255,255,255,0.72)" }}>
+              <Icon size={18} strokeWidth={2.2} style={{ color: "#374151" }} />
             </div>
+            <div style={{ fontSize: "clamp(8px, 1.25vw, 10px)", fontWeight: 700, color: "#4b5563" }}>
+              {item.label}
+            </div>
+          </a>
+        );
+      })}
+    </div>
+
+    {/* 🟢 6. トロフィー一覧 */}
+    <div style={{
+      position: "absolute",
+      left: "11%",
+      bottom: "13.5%", 
+      display: "flex",
+      gap: "10px",
+      zIndex: 10,
+    }}>
+      {TROPHY_LIST.map((t) => {
+        const isUnlocked = (scannedProfile as any).count >= t.threshold; 
+        const Icon = t.icon;
+        return (
+          <div key={t.id} style={{ 
+            display: "flex",
+            opacity: isUnlocked ? 1 : 0.2,
+            filter: isUnlocked ? `drop-shadow(0 0 10px ${t.color})` : "none",
+            transition: "all 0.3s ease"
+          }}>
+            <Icon size={26} color={isUnlocked ? t.color : "#4b5563"} strokeWidth={isUnlocked ? 2.8 : 1.5} />
+          </div>
+        );
+      })}
+    </div>
+    
+    {/* 🟢 7. 活動履歴 */}
+    <div style={{
+      position: "absolute",
+      top: "60.2%",
+      left: "8%",
+      width: "84%",
+      paddingRight: "21%",
+      boxSizing: "border-box",
+      textAlign: "left",
+      fontSize: "clamp(8.5px, 1.45vw, 12px)",
+      lineHeight: 1.28,
+      color: "#4b5563",
+      whiteSpace: "pre-wrap",
+      wordBreak: "break-word",
+    }}>
+      {scannedProfile.history || ""}
+    </div>
+  </div>
+</div>
 
             <div
               style={{

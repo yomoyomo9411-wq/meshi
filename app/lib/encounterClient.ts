@@ -20,6 +20,8 @@ export type EncounterSnapshot = {
   sns: string;
   history: string;
   photoURL: string;
+  cardDesign: string; // 🟢 追加
+  count: number;      // 🟢 追加
 };
 
 export type EncounterDoc = {
@@ -58,6 +60,8 @@ export async function createEncounter(
     sns: otherProfile?.sns ?? "",
     history: otherProfile?.history ?? "",
     photoURL: otherProfile?.photoURL ?? "",
+    cardDesign: otherProfile?.cardDesign ?? "card-base", // 相手のデザインIDを保存
+    count: otherProfile?.count ?? 0,
   };
 
   const snapshotForOther: EncounterSnapshot = {
@@ -66,6 +70,8 @@ export async function createEncounter(
     sns: ownerProfile?.sns ?? "",
     history: ownerProfile?.history ?? "",
     photoURL: ownerProfile?.photoURL ?? "",
+    cardDesign: ownerProfile?.cardDesign ?? "card-base", // あなたのデザインIDを保存
+    count: ownerProfile?.count ?? 0,                  // あなたのカウントを保存
   };
 
   // 🟢 3. 初回交換チェック (自分から見て相手と過去に接触があるか)

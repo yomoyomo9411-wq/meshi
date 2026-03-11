@@ -18,8 +18,9 @@ export type ProfileDoc = {
   sns: string;
   history: string;
   photoURL: string; // StorageのURL
-  cardDesign?: CardDesignType;
-  updatedAt?: Timestamp;
+  cardDesign?: CardDesignType; // すでにあるならそのままでOK！
+  updatedAt?: Timestamp;      // そのままでOK！
+  count?: number;             // 🟢 これを新しく書き加えます！
 };
 
 export async function fetchProfile(uid: string): Promise<ProfileDoc | null> {
