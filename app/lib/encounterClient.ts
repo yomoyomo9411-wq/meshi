@@ -248,13 +248,14 @@ async function getCurrentPositionStrict(): Promise<{
         });
       },
       (error) => {
+        // エラーの詳細をログに出す
         console.error("位置情報の取得に失敗しました:", error);
         reject(new Error("LOCATION_ERROR"));
       },
       {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 0,
+        enableHighAccuracy: true, // 高精度
+        timeout: 15000,           // ★ 8000から15000に延長
+        maximumAge: 30000,        // ★ 0から30000(30秒キャッシュ)に変更。これが成功の鍵です。
       }
     );
   });
