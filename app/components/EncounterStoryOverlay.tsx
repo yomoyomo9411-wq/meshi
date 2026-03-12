@@ -344,7 +344,7 @@ export default function EncounterStoryOverlay({
   <div
     style={{
       position: "absolute",    // 🟢 浮かせる
-    left: 32,                // 🟢 左端からの位置
+    left: 28,                // 🟢 左端からの位置
       width: "36px",
       height: "36px",
       display: "flex",
