@@ -238,12 +238,16 @@ setScannedProfile({
     setStatus("現在地を取得しています…");
 
     try {
+      // 位置情報の取得条件を緩和して成功率を上げる
       await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 8000,
+          enableHighAccuracy: true, // 高精度モードは維持
+          timeout: 15000,           // ★8秒から15秒に延長（GPS起動時間を待つ）
+          maximumAge: 30000,        // ★30秒以内のキャッシュがあればそれを使う（これが一番効きます）
         });
-      }).catch(() => {
+      }).catch((err) => {
+        // デバッグ用にエラー内容をログに出す
+        console.error("位置情報取得エラーの詳細:", err);
         throw new Error("LOCATION_ERROR");
       });
 
@@ -262,7 +266,7 @@ setScannedProfile({
       if (e.message === "LOCATION_ERROR") {
         setStatus("位置情報が取得できませんでした。");
         alert(
-          "位置情報が取得できなかったため、交換を中断しました。設定を確認してください。"
+          "位置情報が取得できなかったため、交換を中断しました。通信環境の良い場所で、ブラウザの位置情報許可を確認してください。"
         );
       } else {
         setStatus("保存に失敗しました");
