@@ -111,23 +111,27 @@ export default function MapComponent() {
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
   const zoom = 15;
-  const handledFocusOtherUidRef = useRef<string | null>(null); 
-   const getOffsetLatLng = (lat: number, lng: number, id?: string) => {
+  const handledFocusOtherUidRef = useRef<string | null>(null);
+  const getOffsetLatLng = (lat: number, lng: number, id: string) => {
     if (!id) return [lat, lng] as [number, number];
     
+    // IDからハッシュ値を作成（常に同じ方向にずれるようにするため）
     let hash = 0;
     for (let i = 0; i < id.length; i++) {
       hash = id.charCodeAt(i) + ((hash << 5) - hash);
     }
-    
-    const latShift = ((hash & 0xFF) / 128) - 1; 
-    const lngShift = (((hash >> 8) & 0xFF) / 128) - 1;
+    hash = Math.abs(hash);
 
-    const spread = 0.00015; // ズレの幅
+    // 0〜359度の角度を決定
+    const angle = (hash % 360) * (Math.PI / 180); 
     
+    // ずらす距離：0.0001 は地図上で約10m強です。
+    // これだけあれば、アイコンの端が見えるのでタップし分けられます。
+    const spread = 0.00015; 
+
     return [
-      lat + (latShift * spread),
-      lng + (lngShift * spread)
+      lat + (Math.cos(angle) * spread),
+      lng + (Math.sin(angle) * spread)
     ] as [number, number];
   };
 
