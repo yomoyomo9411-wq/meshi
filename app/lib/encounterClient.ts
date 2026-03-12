@@ -48,6 +48,25 @@ export async function createEncounter(
   const ownerProfile = await fetchProfile(ownerUid);
   const otherProfile = await fetchProfile(otherUid);
 
+  // ★ 1. まず、今回の交換が初めてかどうかを先に判定する
+  const qFirstCheck = query(
+    collection(db, "encounters"),
+    where("ownerUid", "==", ownerUid),
+    where("otherUid", "==", otherUid)
+  );
+  const existingDocs = await getDocs(qFirstCheck);
+  const isFirstTime = existingDocs.empty;
+
+  // ★ 2. 初回交換なら、スナップショットに保存するカウントを +1 した状態にする
+  // これにより、1人目の交換直後にトロフィーが点灯するようになります
+  const countForOwnerSnapshot = isFirstTime 
+    ? (otherProfile?.count ?? 0) + 1 
+    : (otherProfile?.count ?? 0);
+
+  const countForOtherSnapshot = isFirstTime 
+    ? (ownerProfile?.count ?? 0) + 1 
+    : (ownerProfile?.count ?? 0);
+
   const normalizeCardDesign = (
     design?: CardDesignType
   ): CardDesignType => {
@@ -56,6 +75,7 @@ export async function createEncounter(
     return "card-base";
   };
 
+  // ★ 3. 計算した新しいカウント（countFor...）を snapshot に入れる
   const snapshotForOwner: EncounterSnapshot = {
     name: otherProfile?.name ?? "",
     affiliation: otherProfile?.affiliation ?? "",
@@ -63,7 +83,7 @@ export async function createEncounter(
     history: otherProfile?.history ?? "",
     photoURL: otherProfile?.photoURL ?? "",
     cardDesign: normalizeCardDesign(otherProfile?.cardDesign),
-    count: otherProfile?.count ?? 0,
+    count: countForOwnerSnapshot, 
   };
 
   const snapshotForOther: EncounterSnapshot = {
@@ -73,17 +93,8 @@ export async function createEncounter(
     history: ownerProfile?.history ?? "",
     photoURL: ownerProfile?.photoURL ?? "",
     cardDesign: normalizeCardDesign(ownerProfile?.cardDesign),
-    count: ownerProfile?.count ?? 0,
+    count: countForOtherSnapshot,
   };
-
-  const qFirstCheck = query(
-    collection(db, "encounters"),
-    where("ownerUid", "==", ownerUid),
-    where("otherUid", "==", otherUid)
-  );
-  const existingDocs = await getDocs(qFirstCheck);
-  const isFirstTime = existingDocs.empty;
-
   await clearLatestEncounter(ownerUid, otherUid);
   await clearLatestEncounter(otherUid, ownerUid);
 
