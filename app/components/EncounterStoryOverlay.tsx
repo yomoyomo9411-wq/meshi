@@ -136,8 +136,6 @@ function buildHref(value: string) {
 
 // EncounterStoryOverlay.tsx
 
-// EncounterStoryOverlay.tsx
-
 export default function EncounterStoryOverlay({
   open,
   items,

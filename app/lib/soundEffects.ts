@@ -5,7 +5,7 @@ export const playStarSound = () => {
   const audio = new Audio("/star.wav");
   
   // 音量を調整（0.0 〜 1.0）
-  audio.volume = 0.6; 
+  audio.volume = 0.3; 
   
   // 再生
   audio.play().catch((e) => {
@@ -20,6 +20,6 @@ export const playStarSound = () => {
 
 export const playPaperSound = () => {
   const audio = new Audio("/paper.wav");
-  audio.volume = 0.5; // 音量はお好みで
+  audio.volume = 0.2; // 音量はお好みで
   audio.play().catch((e) => console.warn("Audio play failed:", e));
 };
