@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react"; 
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { onAuthStateChanged, type User } from "firebase/auth";
@@ -16,12 +16,14 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase"; // db を追加
+import { doc, onSnapshot } from "firebase/firestore"; // これを追加
 import {
   fetchProfile,
   type ProfileDoc,
   type CardDesignType,
 } from "../lib/profileClient";
+import { TrophyUnlockOverlay } from "../achivements/UnlockOverlay"; // 追加（ファイル名に合わせて調整してください）
 import { fetchLatestCardsByOwner } from "../lib/encounterClient";
 import { TROPHY_LIST } from "../achivements/constants";
 import { TrophyGallery } from "../achivements/TrophyGallery";
@@ -93,6 +95,43 @@ export default function MeisiPage() {
   const [pressedTab, setPressedTab] = useState<TabKey>(null);
 
   const [cardCount, setCardCount] = useState(0);
+  // 追加: 演出用のステート
+  const [unlockedTrophyId, setUnlockedTrophyId] = useState<string | null>(null);
+  const prevCountRef = useRef<number | null>(null);
+
+  // 追加: リアルタイム監視
+  useEffect(() => {
+    if (!user) return;
+
+    // プロフィールドキュメントをリアルタイム監視
+    const unsub = onSnapshot(doc(db, "profiles", user.uid), (snapshot) => {
+      const data = snapshot.data();
+      if (!data) return;
+
+      const currentCount = data.count || 0;
+
+      // 初回読み込み時はカウントを記録するだけ（ページを開いた瞬間の演出防止）
+      if (prevCountRef.current === null) {
+        prevCountRef.current = currentCount;
+        setCardCount(currentCount); // 表示も更新
+        return;
+      }
+
+      // カウントが増えた場合
+      if (currentCount > prevCountRef.current) {
+        // 増えた後の数値がトロフィーのしきい値と一致するかチェック
+        const trophy = TROPHY_LIST.find(t => t.threshold === currentCount);
+        if (trophy) {
+          setUnlockedTrophyId(trophy.id);
+        }
+        setCardCount(currentCount); // 名刺枚数表示を更新
+      }
+
+      prevCountRef.current = currentCount;
+    });
+
+    return () => unsub();
+  }, [user]);
 
   const hasProfile = useMemo(
     () => profile.name.trim().length > 0,
@@ -1067,6 +1106,13 @@ export default function MeisiPage() {
           </span>
         </button>
       </div>
+
+      {unlockedTrophyId && (
+        <TrophyUnlockOverlay
+          trophyId={unlockedTrophyId}
+          onClose={() => setUnlockedTrophyId(null)}
+        />
+      )}
     </div>
   );
 }
