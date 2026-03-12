@@ -187,15 +187,16 @@ export default function ScanPage() {
               const p = await fetchProfile(uid);
 
               setScannedUid(uid);
-              setScannedProfile({
-                name: p?.name ?? "",
-                affiliation: p?.affiliation ?? "",
-                sns: p?.sns ?? "",
-                history: p?.history ?? "",
-                photoURL: p?.photoURL ?? "",
-                cardDesign: p?.cardDesign ?? "card-base",
-    count: p?.count ?? 0, 
-              }as any);
+setScannedProfile({
+  name: p?.name ?? "",
+  affiliation: p?.affiliation ?? "",
+  sns: p?.sns ?? "",
+  history: p?.history ?? "",
+  photoURL: p?.photoURL ?? "",
+  // ここを修正：DBから取得した値をそのまま入れる
+  cardDesign: p?.cardDesign ?? "card-base", 
+  count: p?.count ?? 0, 
+} as any);
 
               setStatus("読み取り完了。内容を確認して交換してください。");
             } catch (e) {
@@ -627,15 +628,19 @@ export default function ScanPage() {
   >
     {/* 🟢 1. 背景画像 (1枚に統合) */}
     <img
-      src={scannedProfile.cardDesign === "cars-base2" ? "/cars-base2.png" : "/card-base.png"}
-      alt="card-base"
-      style={{
-        width: "100%",
-        height: "auto",
-        display: "block",
-        borderRadius: 24,
-      }}
-    />
+  src={
+    scannedProfile.cardDesign === "card-base3" ? "/card-base3.png" : 
+    scannedProfile.cardDesign === "card-base2" ? "/cars-base2.png" : 
+    "/card-base.png"
+  }
+  alt="card-base"
+  style={{
+    width: "100%",
+    height: "auto",
+    display: "block",
+    borderRadius: 24,
+  }}
+/>
 
     {/* 🟢 2. プロフィール写真 */}
     <div

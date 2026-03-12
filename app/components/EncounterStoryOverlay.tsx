@@ -23,7 +23,7 @@ function AutoFontDiv({
       const maxWidth = containerRef.current.offsetWidth - 4;
       const maxHeight = containerRef.current.offsetHeight - 2;
 
-      let size = 24;
+      let size = 18;
       const minSize = 12;
 
       textRef.current.style.fontSize = size + "px";
