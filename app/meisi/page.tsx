@@ -854,7 +854,7 @@ export default function MeisiPage() {
                       }}
                     >
                       <Icon
-                        size={32}
+                        size={30}
                         color={isUnlocked ? t.color : "#4b5563"}
                         strokeWidth={isUnlocked ? 2.8 : 1.5}
                         fill="none"

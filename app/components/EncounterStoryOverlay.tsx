@@ -344,7 +344,7 @@ export default function EncounterStoryOverlay({
   <div
     style={{
       position: "absolute",    // 🟢 浮かせる
-    left: 32,                // 🟢 左端からの位置
+    left: 28,                // 🟢 左端からの位置
       width: "36px",
       height: "36px",
       display: "flex",
@@ -368,7 +368,7 @@ export default function EncounterStoryOverlay({
   {/* 🟢 B. イベント名専用の固定枠 */}
   <div
     style={{
-      width: "250px",           // 🟢 幅を固定（短くしました）
+      width: "230px",           // 🟢 幅を固定（短くしました）
       height: "36px",
       display: "flex",
       alignItems: "center",
@@ -623,46 +623,50 @@ export default function EncounterStoryOverlay({
                   );
                 })}
               </div>
-              {/* --- 🟢 ここからトロフィー表示を追加 --- */}
-              <div style={{
-                position: "absolute",
-                left: "11%",
-                bottom: "13.5%", // 他の画面と位置を合わせる
-                display: "flex",
-                gap: "10px",
-                zIndex: 10,
-              }}>
-                {TROPHY_LIST.map((t) => {
-                  // 保存されたスナップショット内の count を使って判定
-                  // もしエラーが出る場合は (current.snapshot as any).count にしてください
-                  const isUnlocked = (current.snapshot as any).count >= t.threshold; 
-                  const Icon = t.icon;
-                  
-                  // 現在のテーマカラー（最新なら黄色、過去なら青色）
-                  const themeColor = currentIndex === 0 ? "#fde68a" : "#38bdf8";
+              {/* --- 🟢 トロフィー表示（デザイン統一版） --- */}
+<div style={{
+  position: "absolute",
+  left: "11%",
+  bottom: "13%", // 下からの位置を微調整
+  width: "50%",
+  display: "flex",
+  flexDirection: "row",
+  justifyContent: "flex-start",
+  alignItems: "center",
+  gap: "10px",
+  zIndex: 10,
+  filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))",
+}}>
+  {TROPHY_LIST.map((t) => {
+    // データソースは snapshot の count を維持
+    const isUnlocked = (current.snapshot as any).count >= t.threshold; 
+    const Icon = t.icon;
 
-                  return (
-                    <div key={t.id} style={{ 
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      opacity: isUnlocked ? 1 : 0.2,
-                      // 獲得済みなら、そのトロフィーの色でネオンのように光らせる
-                      filter: isUnlocked 
-                        ? `drop-shadow(0 0 10px ${t.color})` 
-                        : "none",
-                      transition: "all 0.3s ease"
-                    }}>
-                      <Icon 
-                        size={26} 
-                        color={isUnlocked ? t.color : "#4b5563"} 
-                        strokeWidth={isUnlocked ? 2.8 : 1.5} 
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-              {/* --- 🟢 ここまで --- */}
+    return (
+      <div
+        key={t.id}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: isUnlocked ? 1 : 0.2,
+          // 二重の drop-shadow で「光り輝く星」と同じネオン感を出す
+          filter: isUnlocked
+            ? `drop-shadow(0 0 10px ${t.color}) drop-shadow(0 0 20px ${t.color}44)`
+            : "none",
+          transition: "all 0.3s ease",
+        }}
+      >
+        <Icon
+          size={28} // サイズを30に統一
+          color={isUnlocked ? t.color : "#4b5563"}
+          strokeWidth={isUnlocked ? 2.8 : 1.5}
+          fill="none" // 塗りつぶしなしで統一
+        />
+      </div>
+    );
+  })}
+</div>
               
               <div
                 style={{
