@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Instagram, Twitter, Link2, Github } from "lucide-react";
+import { Instagram, Twitter, Link2, Github, Flag } from "lucide-react"; // Flag を追加
 import { TROPHY_LIST } from "../achivements/constants";
 import type { EncounterDoc } from "../lib/encounterClient";
 
@@ -50,41 +50,46 @@ function AutoFontDiv({
     textColor = currentIndex === 0 ? "#fde68a" : "#38bdf8";
   }
 
-  return (
+    return (
     <div
       ref={containerRef}
       style={{
-        position: "absolute",
-        left: "52%",
-        top: 0,
-        bottom: 0,
-        transform: "translateX(-50%)",
-        width: "210px",
+        width: "100%",
+        height: "100%",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        textAlign: "center",
-        overflow: "hidden",
         pointerEvents: "none",
-        zIndex: 1,
       }}
     >
+    {/* 枠となる背景を追加 */}
+    <div
+      style={{
+        WebkitBackdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        maxWidth: "100%",
+        overflow: "hidden",
+      }}
+    >
+       {/* 🟢 余計な div 枠を消して、文字だけにしました */}
       <div
         ref={textRef}
         style={{
           fontWeight: 900,
           fontSize,
-          lineHeight: 1.1,
-          textShadow: "0 0 12px rgba(0,0,0,0.5)",
+          lineHeight: 1,
+          textShadow: "0 2px 10px rgba(0,0,0,0.5)",
           color: textColor,
-          wordBreak: "normal",
           whiteSpace: "nowrap",
         }}
       >
         {text}
       </div>
     </div>
-  );
+  </div>
+);
 }
 
 type Props = {
@@ -137,7 +142,6 @@ export default function EncounterStoryOverlay({
 }: Props) {
   const touchStartXRef = useRef<number | null>(null);
 
-  // 🟢 テスト用：自分のデータを無理やり流し込む（後で戻してね！）
 const current = items[currentIndex];
 
   const formatTime = (createdAt: any) => {
@@ -299,44 +303,77 @@ const current = items[currentIndex];
             }}
           />  
       
-{/* イベント名 + 閉じるボタン エリア */}
+{/* イベント名エリア */}
 <div
   style={{
     position: "relative",
     zIndex: 10,
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between", // 左右に要素を配置
-    padding: "12px 18px", // 上下の余白を少し調整
-    minHeight: 60, // 高さをしっかり確保して名刺との被りを防ぐ
+    justifyContent: "center", // 🟢 全体を画面中央に寄せる
+    gap: 8,                    // 🟢 2つの枠の間の隙間
+    padding: "10px 16px",
+    height: 60,
   }}
 >
-  {/* 1. 左側：イベント名：ラベル */}
+  {/* 🟢 A. 旗専用の小さな枠 */}
   <div
     style={{
-      fontSize: 14,
-      fontWeight: 800,
-      opacity: 0.7,
-      color: "#ffffff", // ラベルは常に白
-      zIndex: 2,
+      position: "absolute",    // 🟢 浮かせる
+    left: 32,                // 🟢 左端からの位置
+      width: "36px",
+      height: "36px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "rgba(255, 255, 255, 0.06)",
+      backdropFilter: "blur(14px)",
+      WebkitBackdropFilter: "blur(14px)",
+      border: "1px solid rgba(255, 255, 255, 0.15)",
+      borderRadius: "10px",
+      boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
     }}
   >
-    イベント名：
+    <Flag 
+      size={18} 
+      color={currentIndex === 0 ? "#fde68a" : "#38bdf8"} 
+      strokeWidth={2.8} 
+    />
   </div>
 
-  {/* 2. 中央（自動文字サイズ調整）：イベント名 */}
-  <AutoFontDiv text={eventLabel || "記録なし"} currentIndex={currentIndex} />
+  {/* 🟢 B. イベント名専用の固定枠 */}
+  <div
+    style={{
+      width: "250px",           // 🟢 幅を固定（短くしました）
+      height: "36px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "rgba(255, 255, 255, 0.06)",
+      backdropFilter: "blur(14px)",
+      WebkitBackdropFilter: "blur(14px)",
+      border: "1px solid rgba(255, 255, 255, 0.15)",
+      borderRadius: "10px",
+      boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+      overflow: "hidden",
+      padding: "0 10px",
+    }}
+  >
+    <AutoFontDiv text={eventLabel || "記録なし"} currentIndex={currentIndex} />
+  </div>
 
-  {/* 3. 右側：✖ボタン */}
+  {/* 3. ×ボタン（右端に固定） */}
   <button
     type="button"
     onClick={onClose}
     style={{
+      position: "absolute",    // 🟢 浮かせて右端へ
+      right: 12,
       width: 40,
       height: 40,
       borderRadius: "50%",
       border: "none",
-      background: "rgba(255,255,255,0.12)",
+      background: "rgba(255,255,255,0.1)",
       color: "white",
       fontSize: 22,
       display: "grid",
