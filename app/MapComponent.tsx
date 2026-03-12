@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { playStarSound } from "./lib/soundEffects"; 
 import {
   MapContainer,
   TileLayer,
@@ -605,6 +606,7 @@ export default function MapComponent() {
               zIndexOffset={item.isLatest ? 100 : 0}
               eventHandlers={{
                 click: () => {
+                  playStarSound(); // ★ ここを playStarSound に変更
                   void openStoryFromEncounter(item);
                 },
               }}
@@ -786,7 +788,9 @@ export default function MapComponent() {
               }}
             >
               <button
-                onClick={() => router.push("/")}
+                onClick={() => {
+                  router.push("/");
+                }}
                 style={getPressedButtonStyle(true, pressedTab === "home")}
                 {...pressHandlers("home")}
               >
@@ -801,7 +805,9 @@ export default function MapComponent() {
               </button>
 
               <button
-                onClick={() => router.push("/cards")}
+                onClick={() => {
+                  router.push("/cards");
+                }}
                 style={getPressedButtonStyle(false, pressedTab === "cards")}
                 {...pressHandlers("cards")}
               >
@@ -818,7 +824,9 @@ export default function MapComponent() {
               </button>
 
               <button
-                onClick={() => router.push("/scan")}
+                onClick={() => {
+                  router.push("/scan");
+                }}
                 style={getPressedButtonStyle(false, pressedTab === "scan")}
                 {...pressHandlers("scan")}
               >
@@ -833,7 +841,9 @@ export default function MapComponent() {
               </button>
 
               <button
-                onClick={() => router.push("/chat")}
+                onClick={() => {
+                  router.push("/chat");
+                }}
                 style={getPressedButtonStyle(false, pressedTab === "chat")}
                 {...pressHandlers("chat")}
               >
@@ -864,7 +874,9 @@ export default function MapComponent() {
               </button>
 
               <button
-                onClick={() => router.push("/meisi")}
+                onClick={() => {
+                  router.push("/meisi");
+                }}
                 style={getPressedButtonStyle(false, pressedTab === "meisi")}
                 {...pressHandlers("meisi")}
               >

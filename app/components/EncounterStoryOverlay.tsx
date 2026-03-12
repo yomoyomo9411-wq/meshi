@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
+import { playPaperSound } from "../lib/soundEffects"; // インポートを追加
 import { Instagram, Twitter, Link2, Github, Flag } from "lucide-react"; // Flag を追加
 import { TROPHY_LIST } from "../achivements/constants";
 import type { EncounterDoc } from "../lib/encounterClient";
@@ -133,6 +134,10 @@ function buildHref(value: string) {
   return "";
 }
 
+// EncounterStoryOverlay.tsx
+
+// EncounterStoryOverlay.tsx
+
 export default function EncounterStoryOverlay({
   open,
   items,
@@ -142,7 +147,28 @@ export default function EncounterStoryOverlay({
 }: Props) {
   const touchStartXRef = useRef<number | null>(null);
 
-const current = items[currentIndex];
+  // 1. 前回のインデックスを保存するためのRef
+  const prevIndexRef = useRef<number>(currentIndex);
+
+  useEffect(() => {
+    // 2. 閉じている時は、音を鳴らさずに最新の currentIndex を記録し続ける
+    if (!open) {
+      prevIndexRef.current = currentIndex;
+      return;
+    }
+
+    // 3. 開いている時に、記録していたインデックスと今のインデックスが違う場合だけ音を鳴らす
+    if (prevIndexRef.current !== currentIndex) {
+      playPaperSound();
+    }
+
+    // 4. 次回の比較のために今のインデックスを保存
+    prevIndexRef.current = currentIndex;
+  }, [currentIndex, open]);
+
+  // ...あとはそのまま
+
+  const current = items[currentIndex];
 
   const formatTime = (createdAt: any) => {
     const sec = createdAt?.seconds;
