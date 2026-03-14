@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
+// ScanPage.tsx の上部
+import { TrophyUnlockOverlay } from "../achivements/UnlockOverlay"; // パスは環境に合わせてください
 import { Html5Qrcode } from "html5-qrcode";
 import {
   Home,
@@ -69,6 +71,8 @@ export default function ScanPage() {
 
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState("カメラを起動します…");
+  // ScanPage コンポーネントの中
+const [unlockedTrophyId, setUnlockedTrophyId] = useState<string | null>(null);
 
   const [scannedUid, setScannedUid] = useState("");
   const [scannedProfile, setScannedProfile] =
@@ -253,14 +257,30 @@ setScannedProfile({
 
       setStatus("交換情報を保存しています…");
 
+         // 1. まず現在の自分のカウントを確認するためにプロフィールを取得
+      const myProfile = await fetchProfile(user.uid);
+      const newCount = (myProfile?.count || 0) + 1; // 今回の交換で＋1される
+
+      // 2. 交換を実行
       await createEncounter(user.uid, scannedUid, eventName.trim());
+
+      // 3. トロフィー達成チェック
+      const trophy = TROPHY_LIST.find(t => t.threshold === newCount);
+      
+      if (trophy) {
+        // トロフィー達成なら演出を表示
+        setUnlockedTrophyId(trophy.id);
+        setStatus("トロフィー獲得！");
+        // ※ここでは router.push はせず、ユーザーが「閉じる」を押すのを待つ
+      } else {
 
       setStatus("交換完了！名刺一覧に追加しました。");
 
-      setTimeout(() => {
-        router.push("/cards");
-      }, 800);
-    } catch (e: any) {
+              setTimeout(() => {
+          router.push("/cards");
+        }, 800);
+      }
+    }catch (e: any) {
       console.error(e);
 
       if (e.message === "LOCATION_ERROR") {
@@ -997,6 +1017,15 @@ setScannedProfile({
           </span>
         </button>
       </div>
+      {unlockedTrophyId && (
+        <TrophyUnlockOverlay
+          trophyId={unlockedTrophyId}
+          onClose={() => {
+            setUnlockedTrophyId(null);
+            router.push("/cards"); // 閉じたら名刺一覧へ移動
+          }}
+        />
+      )}
     </div>
   );
 }
