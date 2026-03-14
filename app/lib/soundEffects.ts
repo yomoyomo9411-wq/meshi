@@ -20,6 +20,6 @@ export const playStarSound = () => {
 
 export const playPaperSound = () => {
   const audio = new Audio("/paper.wav");
-  audio.volume = 0.05; // 音量はお好みで
+  audio.volume = 0; // 音量はお好みで
   audio.play().catch((e) => console.warn("Audio play failed:", e));
 };
